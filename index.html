@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>VocZen</title>
+  <meta name="apple-mobile-web-app-title" content="VocZen">
+  <meta name="theme-color" content="#111111" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      background:#0b0b0c; color:#fff;
+      -webkit-text-size-adjust:100%;
+    }
+    .page{ min-height:100svh; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .wrap{ width:100%; max-width:560px; }
+    .card{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:16px;
+      padding:16px;
+      backdrop-filter: blur(10px);
+    }
+    .word{
+      font-size:30px; font-weight:700;
+      margin:10px 0 6px;
+      word-break: break-word; line-height:1.15;
+    }
+    .hint{ opacity:0.7; font-size:13px; }
+    .grid{ display:grid; gap:10px; margin-top:12px; }
+    .btn{
+      appearance:none; width:100%;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.08);
+      color:#fff; font-size:16px;
+      text-align:left; cursor:pointer;
+      user-select:none; word-break: break-word;
+      touch-action: manipulation;
+    }
+    .btn:active{ transform:scale(0.99); }
+    .btn:disabled{ opacity:0.6; cursor:not-allowed; }
+
+    .row{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:12px; align-items:center;
+    }
+    .smallbtn{
+      appearance:none;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.08);
+      color:#fff; font-size:14px;
+      cursor:pointer;
+      white-space:nowrap;
+      touch-action: manipulation;
+    }
+    .smallbtn:active{ transform:scale(0.99); }
+
+    .modeToggle{
+      width:44px; height:38px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      cursor:pointer;
+      touch-action: manipulation;
+      position:relative;
+    }
+    .modeDots{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+    }
+    .dot{
+      width:8px; height:8px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.25);
+      border:1px solid rgba(255,255,255,0.10);
+    }
+    .dot.on{
+      background:rgba(255,255,255,0.85);
+      border-color:rgba(255,255,255,0.25);
+    }
+    .modeToggle:active{ transform:scale(0.99); }
+
+    .danger{ border-color: rgba(255,0,0,0.35); }
+
+    .msg{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      min-height:24px;
+      font-size:14px;
+      white-space:pre-wrap;
+      word-break: break-word;
+    }
+    .msg.ok{ border-color: rgba(0,255,0,0.30); }
+    .msg.bad{ border-color: rgba(255,0,0,0.30); }
+
+    details{ margin-top:16px; }
+    summary{ cursor:pointer; opacity:0.85; touch-action: manipulation; }
+
+    .taWrap{
+      margin-top:10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.25);
+      overflow:hidden;
+    }
+    textarea{
+      width:100%;
+      min-height:140px;
+      max-height:240px;
+      resize:vertical;
+      border:none;
+      background:transparent;
+      color:#fff;
+      padding:12px;
+      font-size:16px;
+      outline:none;
+      -webkit-overflow-scrolling: touch;
+      display:block;
+    }
+    textarea[readonly]{ opacity:0.85; }
+    .muted{ opacity:0.65; font-size:12px; margin-top:8px; }
+  </style>
+</head>
+
+<body>
+<div class="page">
+  <div class="wrap">
+    <div class="card">
+
+      <div class="word" id="questionText">—</div>
+      <div class="hint" id="hintText">Нажми «Новые» или добавь данные в резерв</div>
+
+      <div class="grid" id="answers"></div>
+
+      <div class="msg" id="msgBox"></div>
+
+      <div class="row">
+        <button class="modeToggle" id="modeToggleBtn" type="button" aria-label="Переключить: слова / предложения">
+          <span class="modeDots" aria-hidden="true">
+            <span class="dot" id="dotLeft"></span>
+            <span class="dot" id="dotRight"></span>
+          </span>
+        </button>
+
+        <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
+        <button class="smallbtn" id="newBtn" type="button">Новые</button>
+        <button class="smallbtn" id="skipBtn" type="button">Пропустить</button>
+        <button class="smallbtn" id="repeatBtn" type="button">Повторить</button>
+      </div>
+
+      <details open>
+        <summary><span id="vaultTitle">Резерв</span> <span id="vaultCount">(0)</span></summary>
+
+        <div class="muted" id="vaultHelp">Формат: EN - RU</div>
+
+        <div class="taWrap">
+          <textarea id="vaultTextarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+        </div>
+
+        <div class="row">
+          <button class="smallbtn" id="saveVaultBtn" type="button">Сохранить</button>
+        </div>
+      </details>
+
+      <details>
+        <summary><span id="learnedTitle">Выучено</span> <span id="learnedCount">(0)</span></summary>
+
+        <div class="taWrap">
+          <textarea id="learnedTextarea" readonly></textarea>
+        </div>
+
+        <div class="row">
+          <button class="smallbtn danger" id="clearLearnedBtn" type="button">Очистить</button>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const LS_APP_MODE = 'vz_mode_v1';     // 'words' | 'sent'
+  const LS_DIR      = 'vz_dir_v1';      // 'EN_RU' | 'RU_EN'
+  const LS_MIGRATED = 'vz_migrated_v1'; // '1'
+
+  const K = {
+    words: { active:'vz_words_active_v1', vault:'vz_words_vault_v1', learned:'vz_words_learned_v1' },
+    sent:  { active:'vz_sent_active_v1',  vault:'vz_sent_vault_v1',  learned:'vz_sent_learned_v1'  }
+  };
+
+  const OLD_WORDS = { active:'vt_active_v7', vault:'vt_vault_v7', learned:'vt_learned_v7', mode:'vt_mode_v7' };
+  const OLD_SENT  = { active:'st_active_v1', vault:'st_vault_v1', learned:'st_learned_v1', mode:'st_mode_v1' };
+
+  const BATCH_SIZE = 10;
+  const AUTO_NEXT_MS = 350;
+
+  const elQuestion = document.getElementById('questionText');
+  const elHint     = document.getElementById('hintText');
+  const elAnswers  = document.getElementById('answers');
+  const elMsg      = document.getElementById('msgBox');
+
+  const btnModeToggle = document.getElementById('modeToggleBtn');
+  const dotLeft  = document.getElementById('dotLeft');
+  const dotRight = document.getElementById('dotRight');
+
+  const btnDir    = document.getElementById('dirBtn');
+  const btnNew    = document.getElementById('newBtn');
+  const btnSkip   = document.getElementById('skipBtn');
+  const btnRepeat = document.getElementById('repeatBtn');
+
+  const elVaultCount = document.getElementById('vaultCount');
+  const taVault      = document.getElementById('vaultTextarea');
+  const btnSaveVault = document.getElementById('saveVaultBtn');
+
+  const elLearnedCount = document.getElementById('learnedCount');
+  const taLearned      = document.getElementById('learnedTextarea');
+  const btnClearLearned= document.getElementById('clearLearnedBtn');
+
+  const loadJSON = (k, fallback) => {
+    try { const raw = localStorage.getItem(k); if (!raw) return fallback; return JSON.parse(raw); }
+    catch { return fallback; }
+  };
+  const saveJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  const loadStr  = (k, fb) => (localStorage.getItem(k) ?? fb);
+  const saveStr  = (k, v) => localStorage.setItem(k, v);
+
+  const norm = (s) => (String(s ?? '').replace(/\s+/g,' ').trim().toLowerCase());
+
+  function dedupePairs(pairs) {
+    const seen = new Set();
+    const out = [];
+    let removed = 0;
+    for (const p of pairs) {
+      if (!p || typeof p.a !== 'string' || typeof p.b !== 'string') continue;
+      const a = p.a.trim(), b = p.b.trim();
+      if (!a || !b) continue;
+      const key = norm(a) + '||' + norm(b);
+      if (seen.has(key)) { removed++; continue; }
+      seen.add(key);
+      out.push({ a, b });
+    }
+    return { out, removed };
+  }
+
+  // Делим строку ТОЛЬКО при сохранении из textarea:
+  // берём ПЕРВЫЙ разделитель вида: пробел + (-/–/—) + пробел.
+  // Вся правая часть сохраняется целиком (включая любые тире внутри перевода).
+  function splitLineForSave(line) {
+    const s = String(line ?? '').trim();
+    const m = /\s[-–—]\s/.exec(s);
+    if (!m) return [s, ''];
+    const i = m.index;
+    const sepLen = m[0].length;
+    return [s.slice(0, i).trim(), s.slice(i + sepLen).trim()];
+  }
+
+  function parseTextarea(text) {
+    const lines = String(text ?? '').split('\n').map(x => x.trim()).filter(Boolean);
+    const pairs = [];
+    let badCount = 0;
+    for (const ln of lines) {
+      const [a,b] = splitLineForSave(ln);
+      if (!a || !b) { badCount++; continue; }
+      pairs.push({ a, b });
+    }
+    return { pairs, badCount };
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function pickWrongOptions(pool, correct, n) {
+    const seen = new Set([norm(correct)]);
+    const out = [];
+    for (const x of shuffle(pool.slice())) {
+      const k = norm(x);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push(x);
+      if (out.length >= n) break;
+    }
+    return out;
+  }
+
+  let appMode = loadStr(LS_APP_MODE, 'words');
+  let dirMode = loadStr(LS_DIR, 'EN_RU');
+
+  const S = {
+    words: { active: [], vault: [], learned: [] },
+    sent:  { active: [], vault: [], learned: [] }
+  };
+
+  let deck = [];
+  let pos = 0;
+  let current = null;
+  let lock = false;
+
+  function migrateOnce() {
+    if (loadStr(LS_MIGRATED,'0') === '1') return;
+
+    const oldDir = localStorage.getItem(OLD_WORDS.mode);
+    if (oldDir === 'EN_RU' || oldDir === 'RU_EN') saveStr(LS_DIR, oldDir);
+
+    const wActive = loadJSON(OLD_WORDS.active, null);
+    const wVault  = loadJSON(OLD_WORDS.vault, null);
+    const wLearn  = loadJSON(OLD_WORDS.learned, null);
+
+    const anyOldWords = Array.isArray(wActive) || Array.isArray(wVault) || Array.isArray(wLearn);
+    if (anyOldWords) {
+      const convert = (arr) => (Array.isArray(arr) ? arr
+        .filter(x => x && typeof x.en === 'string' && typeof x.ru === 'string')
+        .map(x => ({ a: x.en.trim(), b: x.ru.trim() }))
+        .filter(x => x.a && x.b) : []);
+      if (!localStorage.getItem(K.words.active))  saveJSON(K.words.active,  convert(wActive));
+      if (!localStorage.getItem(K.words.vault))   saveJSON(K.words.vault,   convert(wVault));
+      if (!localStorage.getItem(K.words.learned)) saveJSON(K.words.learned, convert(wLearn));
+    }
+
+    const sActive = loadJSON(OLD_SENT.active, null);
+    const sVault  = loadJSON(OLD_SENT.vault, null);
+    const sLearn  = loadJSON(OLD_SENT.learned, null);
+    const anyOldSent = Array.isArray(sActive) || Array.isArray(sVault) || Array.isArray(sLearn);
+    if (anyOldSent) {
+      const convert = (arr) => (Array.isArray(arr) ? arr
+        .filter(x => x && typeof x.en === 'string' && typeof x.ru === 'string')
+        .map(x => ({ a: x.en.trim(), b: x.ru.trim() }))
+        .filter(x => x.a && x.b) : []);
+      if (!localStorage.getItem(K.sent.active))  saveJSON(K.sent.active,  convert(sActive));
+      if (!localStorage.getItem(K.sent.vault))   saveJSON(K.sent.vault,   convert(sVault));
+      if (!localStorage.getItem(K.sent.learned)) saveJSON(K.sent.learned, convert(sLearn));
+    }
+
+    saveStr(LS_MIGRATED,'1');
+  }
+
+  function loadModeData(modeKey) {
+    const keys = K[modeKey];
+    S[modeKey].active  = loadJSON(keys.active,  []);
+    S[modeKey].vault   = loadJSON(keys.vault,   []);
+    S[modeKey].learned = loadJSON(keys.learned, []);
+    if (!Array.isArray(S[modeKey].active))  S[modeKey].active = [];
+    if (!Array.isArray(S[modeKey].vault))   S[modeKey].vault = [];
+    if (!Array.isArray(S[modeKey].learned)) S[modeKey].learned = [];
+  }
+
+  function saveModeData(modeKey) {
+    const keys = K[modeKey];
+    saveJSON(keys.active,  S[modeKey].active);
+    saveJSON(keys.vault,   S[modeKey].vault);
+    saveJSON(keys.learned, S[modeKey].learned);
+  }
+
+  function modeLabel(){ return appMode === 'words' ? 'Слова' : 'Предложения'; }
+
+  function setMsg(text, kind=''){
+    elMsg.textContent = text || '';
+    elMsg.classList.remove('ok','bad');
+    if (kind) elMsg.classList.add(kind);
+  }
+
+  function syncTextareas(){
+    const st = S[appMode];
+    taVault.value = st.vault.map(x => `${x.a} - ${x.b}`).join('\n');
+    taLearned.value = st.learned.map(x => `${x.a} - ${x.b}`).join('\n');
+    elVaultCount.textContent = `(${st.vault.length})`;
+    elLearnedCount.textContent = `(${st.learned.length})`;
+    btnNew.textContent = 'Новые';
+    btnDir.textContent = (dirMode === 'EN_RU') ? 'EN→RU' : 'RU→EN';
+    dotLeft.classList.toggle('on', appMode === 'words');
+    dotRight.classList.toggle('on', appMode === 'sent');
+  }
+
+  function buildQuestion(){
+    if (!current) return null;
+
+    const question = (dirMode === 'EN_RU') ? current.a : current.b;
+    const correct  = (dirMode === 'EN_RU') ? current.b : current.a;
+
+    const pool = S[appMode].active
+      .filter(x => x !== current)
+      .map(x => (dirMode === 'EN_RU') ? x.b : x.a);
+
+    const wrongs = pickWrongOptions(pool, correct, 3);
+    const options = shuffle([correct, ...wrongs]);
+
+    return { question, correct, options };
+  }
+
+  function renderTraining(forceClear=false){
+    syncTextareas();
+    const st = S[appMode];
+
+    if (!st.active || st.active.length < 4){
+      elQuestion.textContent = '—';
+      elHint.textContent = `Недостаточно элементов для тренировки (${modeLabel()}).`;
+      elAnswers.innerHTML = '';
+      if (forceClear) setMsg('');
+      return;
+    }
+
+    if (!current){
+      startRound();
+      return;
+    }
+
+    const q = buildQuestion();
+    if (!q) return;
+
+    elQuestion.textContent = q.question;
+    elHint.textContent = (dirMode === 'EN_RU')
+      ? (appMode === 'words' ? 'Выбери перевод на русском' : 'Выбери русский смысл')
+      : (appMode === 'words' ? 'Выбери перевод на английском' : 'Выбери английскую фразу');
+
+    elAnswers.innerHTML = '';
+    lock = false;
+
+    q.options.forEach(opt=>{
+      const b = document.createElement('button');
+      b.className = 'btn';
+      b.type = 'button';
+      b.textContent = opt;
+      b.addEventListener('click', () => onAnswer(opt, q.correct));
+      elAnswers.appendChild(b);
+    });
+
+    if (forceClear) setMsg('');
+  }
+
+  function disableAnswers(disabled){
+    [...elAnswers.querySelectorAll('button')].forEach(b=>b.disabled=!!disabled);
+  }
+
+  function onAnswer(chosen, correct){
+    if (lock) return;
+    if (norm(chosen) === norm(correct)){
+      lock = true;
+      setMsg('Молодец ✅','ok');
+      disableAnswers(true);
+      setTimeout(goNext, AUTO_NEXT_MS);
+    } else {
+      setMsg(`Неправильно ❌ Правильный: ${correct}`,'bad');
+    }
+  }
+
+  function startRound(){
+    const st = S[appMode];
+    deck = shuffle([...Array(st.active.length).keys()]);
+    pos = 0;
+    current = st.active[deck[pos]];
+    renderTraining(true);
+  }
+
+  function goNext(){
+    const st = S[appMode];
+    disableAnswers(false);
+    lock = false;
+
+    pos += 1;
+    if (pos >= deck.length){
+      deck = shuffle([...Array(st.active.length).keys()]);
+      pos = 0;
+    }
+    current = st.active[deck[pos]];
+    renderTraining(true);
+  }
+
+  function saveVaultFromTextarea(){
+    const { pairs, badCount } = parseTextarea(taVault.value);
+    const { out, removed } = dedupePairs(pairs);
+
+    if (out.length < 4){
+      setMsg(`Нужно минимум 4 валидные строки в резерв (${modeLabel()}).`,'bad');
+      return;
+    }
+
+    S[appMode].vault = out;
+    saveModeData(appMode);
+    syncTextareas();
+
+    let msg = 'Сохранено ✅';
+    const parts = [];
+    if (removed>0) parts.push(`дублей: ${removed}`);
+    if (badCount>0) parts.push(`пропущено: ${badCount}`);
+    if (parts.length) msg += ` (${parts.join(', ')})`;
+    setMsg(msg,'ok');
+  }
+
+  function moveActiveToLearned(){
+    const st = S[appMode];
+    const merged = [...st.learned, ...st.active];
+    st.learned = dedupePairs(merged).out;
+    saveModeData(appMode);
+  }
+
+  function takeNewBatchFromVault(){
+    const st = S[appMode];
+    if (st.active.length) moveActiveToLearned();
+
+    const shuffledVault = shuffle(st.vault.slice());
+    const take = shuffledVault.slice(0, BATCH_SIZE);
+
+    const takeSet = new Set(take.map(x => norm(x.a)+'||'+norm(x.b)));
+    const rest = st.vault.filter(x => !takeSet.has(norm(x.a)+'||'+norm(x.b)));
+
+    st.active = take;
+    st.vault = rest;
+    saveModeData(appMode);
+
+    if (st.active.length < 4){
+      current = null;
+      setMsg(`Недостаточно элементов. Добавь минимум 4 строки в резерв (${modeLabel()}).`,'bad');
+      renderTraining(false);
+      return;
+    }
+
+    setMsg(`${modeLabel()}: загружено ${st.active.length} ✅`,'ok');
+    startRound();
+  }
+
+  function takeRepeatFromLearned(){
+    const st = S[appMode];
+
+    const shuffled = shuffle(st.learned.slice());
+    const take = shuffled.slice(0, BATCH_SIZE);
+
+    const takeSet = new Set(take.map(x => norm(x.a)+'||'+norm(x.b)));
+    const rest = st.learned.filter(x => !takeSet.has(norm(x.a)+'||'+norm(x.b)));
+
+    st.active = take;
+    st.learned = rest;
+    saveModeData(appMode);
+
+    if (st.active.length < 4){
+      current = null;
+      setMsg(`Недостаточно выученного для повтора (${modeLabel()}).`,'bad');
+      renderTraining(false);
+      return;
+    }
+
+    setMsg(`Повтор: загружено ${st.active.length} ✅`,'ok');
+    startRound();
+  }
+
+  function clearLearned(){
+    S[appMode].learned = [];
+    saveModeData(appMode);
+    syncTextareas();
+    setMsg('Выучено очищено ✅','ok');
+  }
+
+  btnModeToggle.addEventListener('click', () => {
+    appMode = (appMode === 'words') ? 'sent' : 'words';
+    saveStr(LS_APP_MODE, appMode);
+    current = null;
+    setMsg('');
+    renderTraining(true);
+  });
+
+  btnDir.addEventListener('click', () => {
+    dirMode = (dirMode === 'EN_RU') ? 'RU_EN' : 'EN_RU';
+    saveStr(LS_DIR, dirMode);
+    setMsg('');
+    renderTraining(true);
+  });
+
+  btnSaveVault.addEventListener('click', saveVaultFromTextarea);
+  btnNew.addEventListener('click', takeNewBatchFromVault);
+  btnRepeat.addEventListener('click', takeRepeatFromLearned);
+
+  btnSkip.addEventListener('click', () => {
+    setMsg('Пропущено ➜ далее','');
+    setTimeout(goNext, 120);
+  });
+
+  btnClearLearned.addEventListener('click', clearLearned);
+
+  migrateOnce();
+  loadModeData('words');
+  loadModeData('sent');
+
+  syncTextareas();
+  renderTraining(true);
+})();
+</script>
+</body>
+</html>

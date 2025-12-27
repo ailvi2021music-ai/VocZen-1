@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>Edit Words</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      background:#0b0b0c;
+      color:#fff;
+      -webkit-text-size-adjust:100%;
+    }
+    .wrap{ max-width:720px; margin:0 auto; padding:16px 16px 28px; }
+    .card{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:16px;
+      padding:16px;
+    }
+    .top{
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom: 12px;
+    }
+    .title{ font-size:16px; opacity:0.9; }
+    .smallbtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.08);
+      color:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      font-size:14px;
+      cursor:pointer;
+      white-space:nowrap;
+      touch-action: manipulation;
+    }
+    .smallbtn:active{ transform:scale(0.99); }
+    .danger{ border-color: rgba(255,0,0,0.25); }
+
+    .hint{ opacity:0.7; font-size:13px; margin-top:6px; }
+    .msg{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      min-height:22px;
+      font-size:14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.ok{ border-color: rgba(0,255,0,0.25); }
+    .msg.bad{ border-color: rgba(255,0,0,0.25); }
+
+    .taWrap{
+      margin-top:10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.25);
+      overflow:hidden;
+    }
+    textarea{
+      width:100%;
+      min-height:200px;
+      max-height:380px;
+      resize:vertical;
+      border:none;
+      background:transparent;
+      color:#fff;
+      padding:12px;
+      font-size:16px;
+      outline:none;
+      overflow:auto;
+      display:block;
+      margin:0;
+      -webkit-overflow-scrolling: touch;
+      -webkit-user-select: text;
+      user-select: text;
+      touch-action: manipulation;
+      white-space: pre;
+    }
+    textarea[readonly]{ opacity:0.9; }
+    details{ margin-top:16px; }
+    summary{ cursor:pointer; opacity:0.85; }
+    code{ opacity:0.9; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="top">
+      <div class="title">Редактор слов</div>
+      <button class="smallbtn" id="backBtn">Назад</button>
+    </div>
+
+    <div class="hint">
+      Формат строк: <code>english - русский</code>. Разделитель — первое тире в строке. Любые символы допустимы.
+    </div>
+
+    <details open>
+      <summary>Резерв</summary>
+      <div class="taWrap"><textarea id="vault"></textarea></div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+        <button class="smallbtn" id="saveVault">Сохранить резерв</button>
+      </div>
+    </details>
+
+    <details>
+      <summary>Выучено</summary>
+      <div class="taWrap"><textarea id="learned"></textarea></div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+        <button class="smallbtn" id="saveLearned">Сохранить выучено</button>
+        <button class="smallbtn danger" id="clearLearned">Очистить выучено</button>
+      </div>
+    </details>
+
+    <details>
+      <summary>Активный набор</summary>
+      <div class="hint" style="margin-top:8px;">Это то, что сейчас тренируется в “Слова”.</div>
+      <div class="taWrap"><textarea id="active" readonly></textarea></div>
+    </details>
+
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const LS_ACTIVE  = 'vt_active_v7';
+  const LS_VAULT   = 'vt_vault_v7';
+  const LS_LEARNED = 'vt_learned_v7';
+
+  const vaultTa = document.getElementById('vault');
+  const learnedTa = document.getElementById('learned');
+  const activeTa = document.getElementById('active');
+  const msg = document.getElementById('msg');
+
+  document.getElementById('backBtn').onclick = () => location.href = './index.html';
+
+  vaultTa.addEventListener('input', () => setMsg(''));
+  learnedTa.addEventListener('input', () => setMsg(''));
+
+  document.getElementById('saveVault').onclick = () => {
+    const before = countNonEmptyLines(vaultTa.value);
+    const parsed = parseLinesToPairs(vaultTa.value);
+    if (parsed.error) return setMsg('Ошибка ❌ ' + parsed.error, 'bad');
+
+    const cleaned = dedupePairs(parsed.items);
+    localStorage.setItem(LS_VAULT, JSON.stringify(cleaned));
+
+    const removed = Math.max(0, before - cleaned.length);
+    setMsg('Сохранено ✅ Удалено дублей: ' + removed, 'ok');
+    render();
+  };
+
+  document.getElementById('saveLearned').onclick = () => {
+    const before = countNonEmptyLines(learnedTa.value);
+    const parsed = parseLinesToPairs(learnedTa.value);
+    if (parsed.error) return setMsg('Ошибка ❌ ' + parsed.error, 'bad');
+
+    const cleaned = dedupePairs(parsed.items);
+    localStorage.setItem(LS_LEARNED, JSON.stringify(cleaned));
+
+    const removed = Math.max(0, before - cleaned.length);
+    setMsg('Сохранено ✅ Удалено дублей: ' + removed, 'ok');
+    render();
+  };
+
+  document.getElementById('clearLearned').onclick = () => {
+    if (!confirm('Очистить выучено?')) return;
+    localStorage.setItem(LS_LEARNED, JSON.stringify([]));
+    setMsg('Очищено ✅', 'ok');
+    render();
+  };
+
+  function render() {
+    const vault = loadPairs(LS_VAULT, []);
+    const learned = loadPairs(LS_LEARNED, []);
+    const active = loadPairs(LS_ACTIVE, []);
+
+    vaultTa.value = vault.map(w => `${w.en} - ${w.ru}`).join('\n');
+    learnedTa.value = learned.map(w => `${w.en} - ${w.ru}`).join('\n');
+    activeTa.value = active.map(w => `${w.en} - ${w.ru}`).join('\n');
+  }
+
+  function setMsg(text, kind='') {
+    msg.textContent = text;
+    msg.classList.remove('ok','bad');
+    if (kind) msg.classList.add(kind);
+  }
+
+  function parseLinesToPairs(text) {
+    const lines = String(text).split('\n').map(s => s.trim()).filter(Boolean);
+    if (lines.length < 4) return { error: 'Нужно минимум 4 строки.', items: null };
+
+    const out = [];
+    for (const line of lines) {
+      const { left, right } = splitFirstDash(line);
+      if (!left || !right) return { error: `Неверный формат: "${line}"`, items: null };
+      out.push({ en: left, ru: right });
+    }
+    return { error: null, items: out };
+  }
+
+  function splitFirstDash(line) {
+    const idxHyphen = line.indexOf('-');
+    const idxEmDash = line.indexOf('—');
+
+    let idx = -1;
+    if (idxHyphen === -1) idx = idxEmDash;
+    else if (idxEmDash === -1) idx = idxHyphen;
+    else idx = Math.min(idxHyphen, idxEmDash);
+
+    if (idx === -1) return { left:'', right:'' };
+
+    const left = line.slice(0, idx).trim();
+    const right = line.slice(idx + 1).trim();
+    return { left, right };
+  }
+
+  function countNonEmptyLines(text) {
+    return String(text).split('\n').map(s => s.trim()).filter(Boolean).length;
+  }
+
+  function dedupePairs(items) {
+    const map = new Map();
+    for (const it of items) {
+      const en = String(it.en || '').trim();
+      const ru = String(it.ru || '').trim();
+      if (!en || !ru) continue;
+      const k = norm(en) + '||' + norm(ru);
+      if (!map.has(k)) map.set(k, { en, ru });
+    }
+    return [...map.values()];
+  }
+  function norm(s) {
+    return s.toLowerCase().replace(/\s+/g,' ').trim();
+  }
+
+  function loadPairs(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return fallback;
+      return arr
+        .filter(x => x && typeof x.en === 'string' && typeof x.ru === 'string')
+        .map(x => ({ en: x.en.trim(), ru: x.ru.trim() }))
+        .filter(x => x.en && x.ru);
+    } catch { return fallback; }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
