@@ -15,12 +15,12 @@
     :root { color-scheme: light dark; }
     * { box-sizing: border-box; }
 
-    /* ВАЖНО: страница НЕ должна скроллиться (iOS bounce ломает фон) */
+    /* Страница НЕ должна скроллиться (iOS bounce ломает слои/фон) */
     html, body{
       margin:0;
       height:100%;
       background:#061826;
-      overflow:hidden; /* ключ */
+      overflow:hidden;
     }
 
     @supports (-webkit-touch-callout: none) {
@@ -35,13 +35,16 @@
       position: relative;
     }
 
-    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН (без filter blur) ===== */
+    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН ===== */
     .bg{
       position: fixed;
       inset: 0;
       z-index: -10;
       pointer-events: none;
+
+      /* ВАЖНО: добавил "bottom glow", чтобы убрать ощущение тёмной полосы снизу на iOS */
       background:
+        radial-gradient(1200px 700px at 50% 105%, rgba(0, 210, 200, 0.22), transparent 65%),
         radial-gradient(1100px 820px at 72% 28%, rgba(0, 220, 205, 0.30), transparent 62%),
         radial-gradient(980px 840px  at 28% 32%, rgba(90, 140, 255, 0.26), transparent 64%),
         radial-gradient(1300px 980px at 55% 86%, rgba(20, 80, 170, 0.22), transparent 68%),
@@ -50,17 +53,18 @@
         linear-gradient(180deg, #071a2a 0%, #04060c 100%);
     }
 
+    /* Виньетка — сделана мягче и НЕ темнит низ так сильно */
     .bgVignette{
       position: fixed;
       inset: 0;
       z-index: -9;
       pointer-events: none;
       background:
-        radial-gradient(1400px 900px at 50% 55%, rgba(0,0,0,0.00) 55%, rgba(0,0,0,0.32) 100%);
-      opacity: 0.9;
+        radial-gradient(1600px 1000px at 50% 45%, rgba(0,0,0,0.00) 62%, rgba(0,0,0,0.22) 100%);
+      opacity: 0.65;
     }
 
-    /* ===== ВАЖНО: viewport фиксированный, скролл только тут (не body) ===== */
+    /* ===== Viewport фиксированный, скролл только внутри .page ===== */
     .page{
       position: fixed;
       inset: 0;
@@ -76,23 +80,35 @@
 
       background: transparent;
 
-      overflow:auto;                 /* если контента станет много — скролл тут */
+      overflow:auto;
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior: none;     /* убирает резину где поддерживается */
+      overscroll-behavior: none;
+      transform: translateZ(0);
     }
 
-    /* чтобы внутри не “прилипала” тень/фон при iOS repaint */
-    .page { transform: translateZ(0); }
+    .wrap{
+      width:100%;
+      max-width:560px;
+      position:relative;
+      z-index:1;
+    }
 
-    .wrap{ width:100%; max-width:560px; position:relative; z-index:1; }
-
+    /* ===== Анимации ===== */
     @keyframes cardIn {
       0%   { transform: translateY(10px) scale(0.985); opacity: 0; filter: blur(2px); }
       100% { transform: translateY(0)    scale(1);     opacity: 1; filter: blur(0); }
     }
+
+    /* Пульсирующее свечение вокруг рамки (карточки) */
+    @keyframes auraPulse {
+      0%, 100% { opacity: 0.00; transform: scale(0.985); }
+      50%      { opacity: 0.55; transform: scale(1.01); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .card { animation: none !important; }
       .btn, .smallbtn, .modeToggle { transition: none !important; }
+      .card::after { animation: none !important; }
     }
 
     .card{
@@ -130,6 +146,23 @@
         linear-gradient(315deg, rgba(0, 220, 200, 0.12), transparent 45%);
       mix-blend-mode: screen;
       opacity:0.6;
+    }
+
+    /* СВЕЧЕНИЕ: отдельный слой, стартует через пару секунд */
+    .card::after{
+      content:"";
+      position:absolute;
+      inset:-14px;
+      border-radius:22px;
+      pointer-events:none;
+      background:
+        radial-gradient(70% 60% at 70% 20%, rgba(0, 240, 220, 0.22), transparent 55%),
+        radial-gradient(60% 60% at 25% 40%, rgba(110, 140, 255, 0.18), transparent 60%),
+        radial-gradient(70% 70% at 55% 90%, rgba(20, 120, 220, 0.14), transparent 60%);
+      filter: blur(18px);
+      opacity: 0;
+      animation: auraPulse 6.5s ease-in-out infinite;
+      animation-delay: 2.2s; /* "через несколько секунд" */
     }
 
     .word{
@@ -657,7 +690,7 @@
       lock = true;
       setMsg('Молодец ✅','ok');
       disableAnswers(true);
-      setTimeout(goNext, AUTO_NEXT_MS);
+      setTimeout(goNext, 350);
     } else {
       setMsg(`Неправильно ❌ Правильный: ${correct}`,'bad');
     }
@@ -717,7 +750,7 @@
     }
 
     const shuffledVault = shuffle(st.vault.slice());
-    const take = shuffledVault.slice(0, BATCH_SIZE);
+    const take = shuffledVault.slice(0, 10);
     if (take.length < 4){
       setMsg(`Недостаточно для набора (нужно 4+).`, 'bad');
       return;
@@ -751,7 +784,7 @@
     }
 
     const shuffled = shuffle(st.learned.slice());
-    const take = shuffled.slice(0, Math.min(BATCH_SIZE, shuffled.length));
+    const take = shuffled.slice(0, Math.min(10, shuffled.length));
     if (take.length < 1){
       setMsg(`Нет выученного для повтора (${modeLabel()}).`, 'bad');
       return;
@@ -872,19 +905,12 @@
   btnNew.addEventListener('click', takeNewBatchFromVault);
   btnRepeat.addEventListener('click', takeRepeatFromLearned);
 
-  btnSkip.addEventListener('click', () => {
-    setMsg('');
-    goNext();
-  });
-
+  btnSkip.addEventListener('click', () => { setMsg(''); goNext(); });
   btnClearLearned.addEventListener('click', clearLearned);
-
   btnKnow.addEventListener('click', knowAndReplace);
   btnUndo.addEventListener('click', undoKnow);
 
-  taVault.addEventListener('input', () => {
-    vaultDirty = true;
-  });
+  taVault.addEventListener('input', () => { vaultDirty = true; });
 
   migrateOnce();
   loadModeData('words');
