@@ -15,12 +15,21 @@
     :root { color-scheme: light dark; }
     * { box-sizing: border-box; }
 
-    /* Страница НЕ должна скроллиться (iOS bounce ломает слои/фон) */
+    /* === ФОН НА ВЕСЬ ЭКРАН (делаем на html/body, не fixed слоями) === */
     html, body{
       margin:0;
       height:100%;
-      background:#061826;
       overflow:hidden;
+      background:
+        radial-gradient(1200px 720px at 50% 105%, rgba(0, 210, 200, 0.34), transparent 64%),
+        radial-gradient(1100px 820px at 72% 28%, rgba(0, 220, 205, 0.32), transparent 62%),
+        radial-gradient(980px 840px  at 28% 32%, rgba(90, 140, 255, 0.28), transparent 64%),
+        radial-gradient(1300px 980px at 55% 86%, rgba(20, 80, 170, 0.26), transparent 68%),
+        radial-gradient(980px 520px at 65% 50%, rgba(0, 255, 230, 0.12), transparent 70%),
+        radial-gradient(980px 520px at 30% 62%, rgba(150, 160, 255, 0.10), transparent 72%),
+        linear-gradient(180deg, #071a2a 0%, #04060c 100%);
+      background-repeat:no-repeat;
+      background-size:cover;
     }
 
     @supports (-webkit-touch-callout: none) {
@@ -31,40 +40,10 @@
       font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
       color:#fff;
       -webkit-text-size-adjust:100%;
-      background: transparent;
       position: relative;
     }
 
-    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН ===== */
-    .bg{
-      position: fixed;
-      inset: 0;
-      z-index: -10;
-      pointer-events: none;
-
-      /* ВАЖНО: добавил "bottom glow", чтобы убрать ощущение тёмной полосы снизу на iOS */
-      background:
-        radial-gradient(1200px 700px at 50% 105%, rgba(0, 210, 200, 0.22), transparent 65%),
-        radial-gradient(1100px 820px at 72% 28%, rgba(0, 220, 205, 0.30), transparent 62%),
-        radial-gradient(980px 840px  at 28% 32%, rgba(90, 140, 255, 0.26), transparent 64%),
-        radial-gradient(1300px 980px at 55% 86%, rgba(20, 80, 170, 0.22), transparent 68%),
-        radial-gradient(980px 520px at 65% 50%, rgba(0, 255, 230, 0.10), transparent 70%),
-        radial-gradient(980px 520px at 30% 62%, rgba(150, 160, 255, 0.08), transparent 72%),
-        linear-gradient(180deg, #071a2a 0%, #04060c 100%);
-    }
-
-    /* Виньетка — сделана мягче и НЕ темнит низ так сильно */
-    .bgVignette{
-      position: fixed;
-      inset: 0;
-      z-index: -9;
-      pointer-events: none;
-      background:
-        radial-gradient(1600px 1000px at 50% 45%, rgba(0,0,0,0.00) 62%, rgba(0,0,0,0.22) 100%);
-      opacity: 0.65;
-    }
-
-    /* ===== Viewport фиксированный, скролл только внутри .page ===== */
+    /* === iOS: фиксируем viewport, скролл только внутри .page === */
     .page{
       position: fixed;
       inset: 0;
@@ -78,31 +57,27 @@
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
       padding-left: 16px;
 
-      background: transparent;
-
       overflow:auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: none;
+
+      /* маленький трюк против артефактов компоновки */
       transform: translateZ(0);
     }
 
-    .wrap{
-      width:100%;
-      max-width:560px;
-      position:relative;
-      z-index:1;
-    }
+    .wrap{ width:100%; max-width:560px; position:relative; z-index:1; }
 
-    /* ===== Анимации ===== */
     @keyframes cardIn {
       0%   { transform: translateY(10px) scale(0.985); opacity: 0; filter: blur(2px); }
       100% { transform: translateY(0)    scale(1);     opacity: 1; filter: blur(0); }
     }
 
-    /* Пульсирующее свечение вокруг рамки (карточки) */
-    @keyframes auraPulse {
-      0%, 100% { opacity: 0.00; transform: scale(0.985); }
-      50%      { opacity: 0.55; transform: scale(1.01); }
+    /* Вспышка “лампы” при правильном ответе */
+    @keyframes glowFlash {
+      0%   { opacity: 0; transform: scale(0.985); }
+      18%  { opacity: 0.95; transform: scale(1.01); }
+      55%  { opacity: 0.55; transform: scale(1.03); }
+      100% { opacity: 0; transform: scale(1.06); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -121,7 +96,7 @@
           rgba(255,255,255,0.14),
           rgba(255,255,255,0.07) 42%,
           rgba(255,255,255,0.05) 100%),
-        rgba(8, 12, 18, 0.36);
+        rgba(8, 12, 18, 0.34);
 
       border:1px solid rgba(255,255,255,0.14);
 
@@ -130,7 +105,8 @@
 
       box-shadow:
         0 22px 70px rgba(0,0,0,0.55),
-        0 0 0 1px rgba(255,255,255,0.05) inset;
+        0 0 0 1px rgba(255,255,255,0.05) inset,
+        0 0 30px rgba(255,255,255,0.06);
 
       animation: cardIn 420ms cubic-bezier(.2,.9,.2,1) both;
     }
@@ -144,25 +120,35 @@
       background:
         linear-gradient(135deg, rgba(255,255,255,0.16), transparent 35%),
         linear-gradient(315deg, rgba(0, 220, 200, 0.12), transparent 45%);
-      mix-blend-mode: screen;
       opacity:0.6;
     }
 
-    /* СВЕЧЕНИЕ: отдельный слой, стартует через пару секунд */
+    /* ЯРКИЙ “ЛАМПОВЫЙ” СВЕТ СЗАДИ (по умолчанию выключен) */
     .card::after{
       content:"";
       position:absolute;
-      inset:-14px;
-      border-radius:22px;
+      inset:-34px;
+      border-radius:26px;
       pointer-events:none;
+      opacity:0;
+
+      /* белый центр + холодные края */
       background:
-        radial-gradient(70% 60% at 70% 20%, rgba(0, 240, 220, 0.22), transparent 55%),
-        radial-gradient(60% 60% at 25% 40%, rgba(110, 140, 255, 0.18), transparent 60%),
-        radial-gradient(70% 70% at 55% 90%, rgba(20, 120, 220, 0.14), transparent 60%);
-      filter: blur(18px);
-      opacity: 0;
-      animation: auraPulse 6.5s ease-in-out infinite;
-      animation-delay: 2.2s; /* "через несколько секунд" */
+        radial-gradient(closest-side at 50% 50%,
+          rgba(255,255,255,0.85) 0%,
+          rgba(255,255,255,0.32) 28%,
+          rgba(180,220,255,0.16) 48%,
+          rgba(0,0,0,0) 70%);
+
+      /* без filter blur (на iOS иногда “пропадает”), вместо этого — мягкие тени */
+      box-shadow:
+        0 0 70px rgba(255,255,255,0.22),
+        0 0 140px rgba(255,255,255,0.12),
+        0 0 220px rgba(120,200,255,0.10);
+    }
+
+    .card.glow::after{
+      animation: glowFlash 900ms ease-out 1;
     }
 
     .word{
@@ -213,22 +199,12 @@
     .smallbtn:disabled{ opacity:0.45; cursor:not-allowed; box-shadow:none; }
 
     .iconbtn{
-      width:auto;
       min-width:44px;
       text-align:center;
-      line-height:1;
       padding:10px 12px;
-      font-size:14px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:0;
-    }
-    .iconbtn .lbl{
-      font-size:13px;
-      line-height:1;
-      opacity:0.92;
-      white-space:nowrap;
     }
 
     .modeToggle{
@@ -306,12 +282,9 @@
 </head>
 
 <body>
-  <div class="bg"></div>
-  <div class="bgVignette"></div>
-
   <div class="page">
     <div class="wrap">
-      <div class="card">
+      <div class="card" id="card">
 
         <div class="word" id="questionText">—</div>
         <div class="hint" id="hintText">Нажми «Новые» или добавь данные в резерв</div>
@@ -330,25 +303,11 @@
 
           <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
 
-          <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">
-            <span class="lbl">Выучил</span>
-          </button>
-
-          <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
-            <span class="lbl">Назад</span>
-          </button>
-
-          <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">
-            <span class="lbl">Новые</span>
-          </button>
-
-          <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">
-            <span class="lbl">Пропустить</span>
-          </button>
-
-          <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">
-            <span class="lbl">Повторить</span>
-          </button>
+          <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">Выучил</button>
+          <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">Назад</button>
+          <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">Новые</button>
+          <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">Пропустить</button>
+          <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">Повторить</button>
         </div>
 
         <details open>
@@ -375,9 +334,7 @@
           </div>
 
           <div class="row">
-            <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">
-              <span class="lbl">Очистить</span>
-            </button>
+            <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">Очистить</button>
           </div>
         </details>
 
@@ -402,6 +359,7 @@
   const BATCH_SIZE = 10;
   const AUTO_NEXT_MS = 350;
 
+  const elCard     = document.getElementById('card');
   const elQuestion = document.getElementById('questionText');
   const elHint     = document.getElementById('hintText');
   const elAnswers  = document.getElementById('answers');
@@ -536,6 +494,16 @@
     elMsg.classList.remove('ok','bad');
     if (kind) elMsg.classList.add(kind);
     elMsg.style.display = 'block';
+  }
+
+  function triggerGlow(){
+    // перезапускаем анимацию каждый раз
+    elCard.classList.remove('glow');
+    // force reflow
+    void elCard.offsetWidth;
+    elCard.classList.add('glow');
+    // убираем класс после анимации (на всякий случай)
+    setTimeout(() => elCard.classList.remove('glow'), 950);
   }
 
   function migrateOnce() {
@@ -688,9 +656,10 @@
     if (lock) return;
     if (norm(chosen) === norm(correct)){
       lock = true;
+      triggerGlow();              // <-- СВЕТ ТОЛЬКО ПРИ ПРАВИЛЬНОМ
       setMsg('Молодец ✅','ok');
       disableAnswers(true);
-      setTimeout(goNext, 350);
+      setTimeout(goNext, AUTO_NEXT_MS);
     } else {
       setMsg(`Неправильно ❌ Правильный: ${correct}`,'bad');
     }
@@ -750,7 +719,7 @@
     }
 
     const shuffledVault = shuffle(st.vault.slice());
-    const take = shuffledVault.slice(0, 10);
+    const take = shuffledVault.slice(0, BATCH_SIZE);
     if (take.length < 4){
       setMsg(`Недостаточно для набора (нужно 4+).`, 'bad');
       return;
@@ -784,7 +753,7 @@
     }
 
     const shuffled = shuffle(st.learned.slice());
-    const take = shuffled.slice(0, Math.min(10, shuffled.length));
+    const take = shuffled.slice(0, Math.min(BATCH_SIZE, shuffled.length));
     if (take.length < 1){
       setMsg(`Нет выученного для повтора (${modeLabel()}).`, 'bad');
       return;
