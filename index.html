@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>VocZen</title>
+
   <meta name="apple-mobile-web-app-title" content="VocZen">
   <meta name="theme-color" content="#061826" />
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,22 +33,24 @@
       -webkit-text-size-adjust:100%;
       background: transparent;
 
-      /* ключ: убирает белый "underscroll" фон */
+      /* убирает белый/чёрный "underscroll" фон */
       overscroll-behavior: none;
       overflow-x: hidden;
+
       position: relative;
     }
 
-    /* Фон на весь экран (включая safe-area) — не "убивает" цвет */
+    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН (включая safe-area) ===== */
     .bg{
       position: fixed;
       inset: 0;
       z-index: -5;
       pointer-events: none;
+
       background:
-        radial-gradient(900px 560px at 70% 28%, rgba(0, 210, 200, 0.30), transparent 62%),
-        radial-gradient(780px 560px at 25% 24%, rgba(70, 150, 255, 0.26), transparent 64%),
-        radial-gradient(980px 720px at 50% 78%, rgba(20, 70, 140, 0.26), transparent 66%),
+        radial-gradient(980px 660px at 70% 28%, rgba(0, 210, 200, 0.32), transparent 62%),
+        radial-gradient(900px 720px at 24% 30%, rgba(70, 150, 255, 0.28), transparent 64%),
+        radial-gradient(1100px 820px at 52% 86%, rgba(20, 70, 140, 0.26), transparent 68%),
         linear-gradient(180deg, #071a2a 0%, #04060c 100%);
     }
 
@@ -57,8 +60,8 @@
       z-index: -4;
       pointer-events: none;
       background:
-        radial-gradient(780px 520px at 62% 42%, rgba(0, 240, 220, 0.18), transparent 62%),
-        radial-gradient(720px 520px at 30% 54%, rgba(120, 130, 255, 0.16), transparent 65%);
+        radial-gradient(820px 560px at 62% 40%, rgba(0, 240, 220, 0.18), transparent 62%),
+        radial-gradient(760px 560px at 30% 55%, rgba(120, 130, 255, 0.16), transparent 66%);
       filter: blur(18px);
       opacity: 1;
     }
@@ -69,9 +72,10 @@
       z-index: -3;
       pointer-events: none;
       background:
-        radial-gradient(1200px 760px at 50% 60%, transparent 52%, rgba(0,0,0,0.55) 100%);
+        radial-gradient(1200px 800px at 50% 60%, transparent 52%, rgba(0,0,0,0.52) 100%);
     }
 
+    /* ===== ЦЕНТРИРОВАНИЕ БЕЗ СМЕЩЕНИЯ ===== */
     .page{
       min-height:100vh;
       min-height:100dvh;
@@ -81,8 +85,12 @@
       align-items:center;
       justify-content:center;
 
-      padding:16px;
+      /* симметрично учитываем safe-area сверху и снизу */
+      padding-top:  calc(16px + env(safe-area-inset-top));
+      padding-right:16px;
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      padding-left: 16px;
+
       position:relative;
       overflow:hidden;
       background: transparent;
@@ -93,6 +101,16 @@
     }
 
     .wrap{ width:100%; max-width:560px; position:relative; z-index:1; }
+
+    /* ===== АНИМАЦИЯ ПОЯВЛЕНИЯ ===== */
+    @keyframes cardIn {
+      0%   { transform: translateY(10px) scale(0.985); opacity: 0; filter: blur(2px); }
+      100% { transform: translateY(0)    scale(1);     opacity: 1; filter: blur(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card { animation: none !important; }
+      .btn, .smallbtn, .modeToggle { transition: none !important; }
+    }
 
     .card{
       position:relative;
@@ -107,12 +125,15 @@
         rgba(8, 12, 18, 0.38);
 
       border:1px solid rgba(255,255,255,0.14);
+
       backdrop-filter: blur(18px) saturate(150%);
       -webkit-backdrop-filter: blur(18px) saturate(150%);
 
       box-shadow:
         0 22px 70px rgba(0,0,0,0.55),
         0 0 0 1px rgba(255,255,255,0.05) inset;
+
+      animation: cardIn 420ms cubic-bezier(.2,.9,.2,1) both;
     }
 
     .card::before{
@@ -149,6 +170,7 @@
       user-select:none; word-break: break-word;
       touch-action: manipulation;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      transition: transform 120ms ease, filter 120ms ease;
     }
     .btn:active{ transform:scale(0.99); }
     .btn:disabled{ opacity:0.6; cursor:not-allowed; box-shadow:none; }
@@ -169,6 +191,7 @@
       white-space:nowrap;
       touch-action: manipulation;
       box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+      transition: transform 120ms ease;
     }
     .smallbtn:active{ transform:scale(0.99); }
     .smallbtn:disabled{ opacity:0.45; cursor:not-allowed; box-shadow:none; }
@@ -204,7 +227,9 @@
       cursor:pointer;
       touch-action: manipulation;
       box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+      transition: transform 120ms ease;
     }
+    .modeToggle:active{ transform:scale(0.99); }
 
     .modeDots{ display:flex; gap:10px; align-items:center; justify-content:center; }
     .dot{
@@ -218,7 +243,6 @@
       background:rgba(255,255,255,0.90);
       border-color:rgba(255,255,255,0.28);
     }
-    .modeToggle:active{ transform:scale(0.99); }
 
     .msg{
       margin-top:10px;
