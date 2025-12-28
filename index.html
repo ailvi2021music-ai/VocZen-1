@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>VocZen</title>
   <meta name="apple-mobile-web-app-title" content="VocZen">
-  <meta name="theme-color" content="#111111" />
+  <meta name="theme-color" content="#0b1a24" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
@@ -15,13 +15,35 @@
     * { box-sizing: border-box; }
 
     html, body{
+      margin:0;
       height:100%;
       min-height:100%;
-      margin:0;
-      background-color:#04050a;
+      background:#04050a; /* страховка */
     }
 
-    html{
+    /* iOS Safari / PWA: иногда только так корректно тянется под safe-area */
+    @supports (-webkit-touch-callout: none) {
+      html, body { height: -webkit-fill-available; }
+    }
+
+    body{
+      font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      color:#fff;
+      -webkit-text-size-adjust:100%;
+
+      /* важно: убирает белый "резиновый" фон при протяжке */
+      overscroll-behavior: none;
+      overflow-x: hidden;
+
+      position: relative;
+    }
+
+    /* 100% гарантированный фон на весь экран (и под safe-area тоже) */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
       background:
         radial-gradient(900px 520px at 68% 40%, rgba(0, 200, 190, 0.22), transparent 60%),
         radial-gradient(760px 520px at 28% 30%, rgba(60, 130, 255, 0.18), transparent 62%),
@@ -30,11 +52,19 @@
       background-attachment: fixed;
     }
 
-    body{
-      font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
-      color:#fff;
-      -webkit-text-size-adjust:100%;
-      background: transparent;
+    /* мягкая “вуаль” и виньетка поверх */
+    body::after{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events:none;
+      background:
+        radial-gradient(900px 520px at 60% 35%, rgba(0, 220, 200, 0.10), transparent 65%),
+        radial-gradient(780px 540px at 30% 45%, rgba(90, 120, 255, 0.10), transparent 70%),
+        radial-gradient(1200px 700px at 50% 60%, transparent 55%, rgba(0,0,0,0.55) 100%);
+      filter: blur(18px);
+      opacity:0.9;
     }
 
     .page{
@@ -54,24 +84,8 @@
       background: transparent;
     }
 
-    .page::before{
-      content:"";
-      position:absolute;
-      inset:-60px;
-      background:
-        radial-gradient(900px 520px at 60% 35%, rgba(0, 220, 200, 0.10), transparent 65%),
-        radial-gradient(780px 540px at 30% 45%, rgba(90, 120, 255, 0.10), transparent 70%);
-      filter: blur(18px);
-      opacity:0.9;
-      pointer-events:none;
-    }
-    .page::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:
-        radial-gradient(1200px 700px at 50% 60%, transparent 55%, rgba(0,0,0,0.55) 100%);
-      pointer-events:none;
+    @supports (-webkit-touch-callout: none) {
+      .page { min-height: -webkit-fill-available; }
     }
 
     .wrap{ width:100%; max-width:560px; position:relative; z-index:1; }
@@ -164,33 +178,13 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
+      gap:0;
     }
     .iconbtn .lbl{
       font-size:13px;
       line-height:1;
       opacity:0.92;
       white-space:nowrap;
-    }
-
-    /* кнопки без символов/иконок */
-    .iconbtn.nosym{ gap:0; }
-    .iconbtn.nosym .lbl{ font-size:13px; }
-
-    .iconbtn svg{
-      width:18px;
-      height:18px;
-      stroke:rgba(255,255,255,0.92);
-      fill:none;
-      stroke-width:2.2;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-      filter: drop-shadow(0 1px 0 rgba(0,0,0,0.25));
-      flex:0 0 auto;
-    }
-    .smallbtn:disabled svg{
-      stroke:rgba(255,255,255,0.45);
-      filter:none;
     }
 
     .modeToggle{
@@ -292,28 +286,23 @@
 
         <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
 
-        <!-- БЕЗ СИМВОЛОВ -->
-        <button class="smallbtn iconbtn nosym" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">
+        <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">
           <span class="lbl">Выучил</span>
         </button>
 
-        <!-- БЕЗ СИМВОЛОВ -->
-        <button class="smallbtn iconbtn nosym" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
+        <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
           <span class="lbl">Назад</span>
         </button>
 
-        <!-- БЕЗ СИМВОЛОВ -->
-        <button class="smallbtn iconbtn nosym" id="newBtn" type="button" aria-label="Новые (взять из резерва)">
+        <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">
           <span class="lbl">Новые</span>
         </button>
 
-        <!-- БЕЗ СИМВОЛОВ -->
-        <button class="smallbtn iconbtn nosym" id="skipBtn" type="button" aria-label="Пропустить">
+        <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">
           <span class="lbl">Пропустить</span>
         </button>
 
-        <!-- БЕЗ СИМВОЛОВ -->
-        <button class="smallbtn iconbtn nosym" id="repeatBtn" type="button" aria-label="Повторить">
+        <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">
           <span class="lbl">Повторить</span>
         </button>
       </div>
@@ -343,13 +332,6 @@
 
         <div class="row">
           <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 6h18"></path>
-              <path d="M8 6V4h8v2"></path>
-              <path d="M6 6l1 16h10l1-16"></path>
-              <path d="M10 11v6"></path>
-              <path d="M14 11v6"></path>
-            </svg>
             <span class="lbl">Очистить</span>
           </button>
         </div>
