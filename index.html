@@ -40,39 +40,37 @@
       position: relative;
     }
 
-    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН (включая safe-area) ===== */
+    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН (БЕЗ filter: blur — чтобы iOS не давал "швы") ===== */
     .bg{
       position: fixed;
       inset: 0;
-      z-index: -5;
+      z-index: -10;
       pointer-events: none;
 
+      /* Только градиенты — никаких filter/blur на whole-screen */
       background:
-        radial-gradient(980px 660px at 70% 28%, rgba(0, 210, 200, 0.32), transparent 62%),
-        radial-gradient(900px 720px at 24% 30%, rgba(70, 150, 255, 0.28), transparent 64%),
-        radial-gradient(1100px 820px at 52% 86%, rgba(20, 70, 140, 0.26), transparent 68%),
+        /* большие мягкие пятна */
+        radial-gradient(1100px 820px at 72% 28%, rgba(0, 220, 205, 0.30), transparent 62%),
+        radial-gradient(980px 840px  at 28% 32%, rgba(90, 140, 255, 0.26), transparent 64%),
+        radial-gradient(1300px 980px at 55% 86%, rgba(20, 80, 170, 0.22), transparent 68%),
+
+        /* дополнительные "glow" кольца (замена bgGlow без blur) */
+        radial-gradient(980px 520px at 65% 50%, rgba(0, 255, 230, 0.10), transparent 70%),
+        radial-gradient(980px 520px at 30% 62%, rgba(150, 160, 255, 0.08), transparent 72%),
+
+        /* базовый градиент */
         linear-gradient(180deg, #071a2a 0%, #04060c 100%);
     }
 
-    .bgGlow{
-      position: fixed;
-      inset: -90px;
-      z-index: -4;
-      pointer-events: none;
-      background:
-        radial-gradient(820px 560px at 62% 40%, rgba(0, 240, 220, 0.18), transparent 62%),
-        radial-gradient(760px 560px at 30% 55%, rgba(120, 130, 255, 0.16), transparent 66%);
-      filter: blur(18px);
-      opacity: 1;
-    }
-
+    /* лёгкая виньетка, но слабее и без "обрыва" снизу */
     .bgVignette{
       position: fixed;
       inset: 0;
-      z-index: -3;
+      z-index: -9;
       pointer-events: none;
       background:
-        radial-gradient(1200px 800px at 50% 60%, transparent 52%, rgba(0,0,0,0.52) 100%);
+        radial-gradient(1400px 900px at 50% 55%, rgba(0,0,0,0.00) 55%, rgba(0,0,0,0.32) 100%);
+      opacity: 0.9;
     }
 
     /* ===== ЦЕНТРИРОВАНИЕ БЕЗ СМЕЩЕНИЯ ===== */
@@ -122,7 +120,7 @@
           rgba(255,255,255,0.14),
           rgba(255,255,255,0.07) 42%,
           rgba(255,255,255,0.05) 100%),
-        rgba(8, 12, 18, 0.38);
+        rgba(8, 12, 18, 0.36);
 
       border:1px solid rgba(255,255,255,0.14);
 
@@ -170,7 +168,7 @@
       user-select:none; word-break: break-word;
       touch-action: manipulation;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-      transition: transform 120ms ease, filter 120ms ease;
+      transition: transform 120ms ease;
     }
     .btn:active{ transform:scale(0.99); }
     .btn:disabled{ opacity:0.6; cursor:not-allowed; box-shadow:none; }
@@ -291,7 +289,6 @@
 
 <body>
   <div class="bg"></div>
-  <div class="bgGlow"></div>
   <div class="bgVignette"></div>
 
   <div class="page">
