@@ -154,7 +154,6 @@
     .smallbtn:active{ transform:scale(0.99); }
     .smallbtn:disabled{ opacity:0.45; cursor:not-allowed; box-shadow:none; }
 
-    /* кнопки панели */
     .iconbtn{
       width:auto;
       min-width:44px;
@@ -174,7 +173,7 @@
       white-space:nowrap;
     }
 
-    /* текстовые кнопки (без символов/иконок) */
+    /* кнопки без символов/иконок */
     .iconbtn.nosym{ gap:0; }
     .iconbtn.nosym .lbl{ font-size:13px; }
 
@@ -293,31 +292,27 @@
 
         <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
 
-        <!-- БЕЗ СИМВОЛОВ: Выучил -->
+        <!-- БЕЗ СИМВОЛОВ -->
         <button class="smallbtn iconbtn nosym" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">
           <span class="lbl">Выучил</span>
         </button>
 
-        <!-- ОСТАВЛЯЕМ СИМВОЛ (стрелка) ДЛЯ НАЗАД -->
-        <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 14l-4-4 4-4"></path>
-            <path d="M5 10h9a5 5 0 1 1 0 10h-2"></path>
-          </svg>
+        <!-- БЕЗ СИМВОЛОВ -->
+        <button class="smallbtn iconbtn nosym" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
           <span class="lbl">Назад</span>
         </button>
 
-        <!-- БЕЗ СИМВОЛОВ: Новые -->
+        <!-- БЕЗ СИМВОЛОВ -->
         <button class="smallbtn iconbtn nosym" id="newBtn" type="button" aria-label="Новые (взять из резерва)">
           <span class="lbl">Новые</span>
         </button>
 
-        <!-- БЕЗ СИМВОЛОВ: Пропустить -->
+        <!-- БЕЗ СИМВОЛОВ -->
         <button class="smallbtn iconbtn nosym" id="skipBtn" type="button" aria-label="Пропустить">
           <span class="lbl">Пропустить</span>
         </button>
 
-        <!-- БЕЗ СИМВОЛОВ: Повторить -->
+        <!-- БЕЗ СИМВОЛОВ -->
         <button class="smallbtn iconbtn nosym" id="repeatBtn" type="button" aria-label="Повторить">
           <span class="lbl">Повторить</span>
         </button>
