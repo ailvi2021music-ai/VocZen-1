@@ -70,9 +70,27 @@
     .iconbtn{
       width:44px;
       text-align:center;
-      font-size:18px;
       line-height:1;
       padding:10px 0;
+      font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:0;
+    }
+
+    /* Единый стиль иконок (SVG) на всех устройствах */
+    .iconbtn svg{
+      width:18px;
+      height:18px;
+      stroke:rgba(255,255,255,0.92);
+      fill:none;
+      stroke-width:2.2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    .smallbtn:disabled svg{
+      stroke:rgba(255,255,255,0.45);
     }
 
     .modeToggle{
@@ -168,15 +186,43 @@
         <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
 
         <!-- ✓ = знаю/замени -->
-        <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Знаю (перенести в выучено и заменить)">✓</button>
+        <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Знаю (перенести в выучено и заменить)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5"></path>
+          </svg>
+        </button>
 
         <!-- ↩ = многошаговый undo -->
-        <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">↩</button>
+        <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 14l-4-4 4-4"></path>
+            <path d="M5 10h9a5 5 0 1 1 0 10h-2"></path>
+          </svg>
+        </button>
 
-        <!-- Иконки вместо текста -->
-        <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">＋</button>
-        <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">➜</button>
-        <button class="smallbtn" id="repeatBtn" type="button">Повторить</button>
+        <!-- ＋ -->
+        <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14"></path>
+            <path d="M5 12h14"></path>
+          </svg>
+        </button>
+
+        <!-- ➜ -->
+        <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h12"></path>
+            <path d="M13 6l6 6-6 6"></path>
+          </svg>
+        </button>
+
+        <!-- ⟳ (повторить) -->
+        <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 12a8 8 0 1 1-2.34-5.66"></path>
+            <path d="M20 4v6h-6"></path>
+          </svg>
+        </button>
       </div>
 
       <details open>
@@ -203,8 +249,16 @@
         </div>
 
         <div class="row">
-          <!-- корзина вместо "Очистить" -->
-          <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">🗑</button>
+          <!-- корзина -->
+          <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h18"></path>
+              <path d="M8 6V4h8v2"></path>
+              <path d="M6 6l1 16h10l1-16"></path>
+              <path d="M10 11v6"></path>
+              <path d="M14 11v6"></path>
+            </svg>
+          </button>
         </div>
       </details>
 
@@ -348,6 +402,9 @@
   // Многошаговый undo: отдельный стек для каждого режима
   const undoStacks = { words: [], sent: [] };
 
+  // Чтобы не затирать несохранённый ввод в резерве
+  let vaultDirty = false;
+
   function updateUndoBtn(){
     const stack = undoStacks[appMode];
     btnUndo.disabled = !(stack && stack.length > 0);
@@ -430,7 +487,13 @@
 
   function syncTextareas(){
     const st = S[appMode];
-    taVault.value = st.vault.map(x => `${x.a} - ${x.b}`).join('\n');
+
+    // IMPORTANT: не затирать несохранённый ввод
+    const vaultFocused = (document.activeElement === taVault);
+    if (!vaultDirty && !vaultFocused) {
+      taVault.value = st.vault.map(x => `${x.a} - ${x.b}`).join('\n');
+    }
+
     taLearned.value = st.learned.map(x => `${x.a} - ${x.b}`).join('\n');
 
     elVaultCount.textContent = `(${st.vault.length})`;
@@ -521,6 +584,9 @@
 
   // Последовательный цикл: pos = (pos+1) mod N
   function goNext(){
+    // ВАЖНО: сообщение (Молодец/ошибка) должно исчезать при переходе к следующему элементу
+    setMsg('');
+
     const st = S[appMode];
     disableAnswers(false);
     lock = false;
@@ -541,6 +607,9 @@
     const { out, removed } = dedupePairs(pairs);
     S[appMode].vault = out;
     saveModeData(appMode);
+
+    vaultDirty = false; // теперь ввод сохранён
+
     syncTextareas();
 
     let msg = 'Сохранено ✅';
@@ -558,29 +627,27 @@
     st.learned = dedupePairs(merged).out;
   }
 
-  // ＋ Новые: безопасно — если из резерва < 4, ничего не переносим и не трогаем
+  // ＋ Новые: НЕ ДОЛЖНО стирать несохранённый ввод при ошибке
   function takeNewBatchFromVault(){
     const st = S[appMode];
 
     // сброс undo-истории при смене набора
     undoStacks[appMode] = [];
+    updateUndoBtn();
 
     if (!st.vault || st.vault.length < 4){
-      setMsg(`В резерве меньше 4 строк (${modeLabel()}). Добавь минимум 4.`, 'bad');
-      syncTextareas();
+      setMsg(`В резерве меньше 4 строк (${modeLabel()}). Добавь минимум 4 и нажми «Сохранить».`, 'bad');
+      // НЕ вызываем syncTextareas() здесь, чтобы не стереть введённый, но не сохранённый текст
       return;
     }
 
-    // подготовим батч, НЕ трогая данные, пока не уверены
     const shuffledVault = shuffle(st.vault.slice());
     const take = shuffledVault.slice(0, BATCH_SIZE);
     if (take.length < 4){
       setMsg(`Недостаточно для набора (нужно 4+).`, 'bad');
-      syncTextareas();
       return;
     }
 
-    // теперь можно коммитить изменения состояния
     if (st.active.length) moveActiveToLearned();
 
     const takeSet = new Set(take.map(x => pairKey(x)));
@@ -597,95 +664,48 @@
     renderTraining(false);
   }
 
-  // ✅ НОВАЯ ЛОГИКА "ПОВТОРИТЬ":
-  // - работает с 1+
-  // - берёт N из "Выучено" (N = min(learned, 10))
-  // - переносит их в "Изучаемые"
-  // - вымещает N текущих "Изучаемых" в "Резерв"
-  // - удаляет эти N из "Выучено"
+  // Повторить: НЕ ДОЛЖНО стирать несохранённый ввод при ошибке
   function takeRepeatFromLearned(){
     const st = S[appMode];
 
-    // сброс undo-истории (как у тебя было)
     undoStacks[appMode] = [];
+    updateUndoBtn();
 
-    if (!st.learned || st.learned.length === 0){
+    if (!st.learned || st.learned.length < 1){
       setMsg(`Нет выученного для повтора (${modeLabel()}).`, 'bad');
-      syncTextareas();
       return;
     }
 
-    // сколько хотим вернуть на повтор
-    const wantN = Math.min(st.learned.length, BATCH_SIZE);
-
-    // исключим случай, когда часть "выучено" уже присутствует в active
-    const activeKeys = new Set((st.active || []).map(x => pairKey(x)));
-    const picked = [];
-    const pickedKeys = new Set();
-
-    // случайно выбираем из выученного
+    // берём до 10, но допускаем и 1..3
     const shuffled = shuffle(st.learned.slice());
-    for (const item of shuffled) {
-      const k = pairKey(item);
-      if (!k || pickedKeys.has(k)) continue;
-      if (activeKeys.has(k)) continue; // уже изучается — не берём
-      picked.push(item);
-      pickedKeys.add(k);
-      if (picked.length >= wantN) break;
-    }
-
-    if (picked.length === 0){
-      setMsg(`Все выученные уже находятся в изучаемых (${modeLabel()}).`, 'bad');
-      syncTextareas();
+    const take = shuffled.slice(0, Math.min(BATCH_SIZE, shuffled.length));
+    if (take.length < 1){
+      setMsg(`Нет выученного для повтора (${modeLabel()}).`, 'bad');
       return;
     }
 
-    const n = picked.length;
+    // Коммит: чтобы ничего не терялось —
+    // take (из learned) -> active,
+    // а столько же текущих active -> vault.
+    const takeSet = new Set(take.map(x => pairKey(x)));
+    const restLearned = st.learned.filter(x => !takeSet.has(pairKey(x)));
 
-    // 1) удаляем picked из "Выучено"
-    st.learned = st.learned.filter(x => !pickedKeys.has(pairKey(x)));
+    const count = take.length;
 
-    // 2) вымещаем n текущих "Изучаемых" в "Резерв"
-    //    (вымещаем с конца, чтобы меньше шанс снести "текущее" слово)
-    let kicked = [];
-    if (Array.isArray(st.active) && st.active.length > 0){
-      if (st.active.length >= n) {
-        kicked = st.active.splice(st.active.length - n, n);
-      } else {
-        // если активных меньше — вымещаем всё что есть
-        kicked = st.active.splice(0, st.active.length);
-      }
-    } else {
-      st.active = [];
-    }
+    const displaced = st.active.slice(0, count); // вытесняем первые N из активных
+    const newActive = take.concat(st.active.slice(count));
 
-    if (kicked.length){
-      st.vault = Array.isArray(st.vault) ? st.vault : [];
-      st.vault.push(...kicked);
-      st.vault = dedupePairs(st.vault).out;
-    }
+    // displaced -> vault (с дедупом вместе)
+    st.vault = dedupePairs(st.vault.concat(displaced)).out;
 
-    // 3) добавляем picked в "Изучаемые"
-    st.active.push(...picked);
-    st.active = dedupePairs(st.active).out;
+    st.active = newActive;
+    st.learned = restLearned;
 
-    // 4) если после операций активных стало <4 — тренировка невозможна (4 варианта ответа)
-    //    но данные мы НЕ теряем, просто показываем сообщение
     saveModeData(appMode);
 
-    // поправим pos/current так, чтобы не улетело
-    if (!st.active || st.active.length === 0){
-      pos = 0;
-      current = null;
-      setMsg(`Повтор: добавлено ${n}. Но активных нет — нажми ＋ или добавь слова.`, 'bad');
-      renderTraining(false);
-      return;
-    }
-
-    if (pos >= st.active.length) pos = 0;
-    current = st.active[pos];
-
-    setMsg(`Повтор: добавлено ${n} → изучаемые. В резерв: ${kicked.length}.`, 'ok');
+    pos = 0;
+    current = st.active[pos] || null;
+    setMsg(`Повтор: загружено ${take.length} ✅`,'ok');
     renderTraining(false);
   }
 
@@ -697,12 +717,11 @@
   }
 
   // ✓ Знаю: перенос текущего в выучено + замена из резерва (если есть)
-  // Снапшот в стек — можно откатывать сколько угодно раз
   function knowAndReplace(){
     const st = S[appMode];
-    if (!current || !st.active || st.active.length < 4) return;
+    if (!current || !st.active || st.active.length < 1) return;
 
-    // push snapshot
+    // snapshot
     undoStacks[appMode].push({
       state: deepClone({ active: st.active, vault: st.vault, learned: st.learned }),
       pos,
@@ -716,7 +735,7 @@
     st.learned.push({ a: current.a, b: current.b });
     st.learned = dedupePairs(st.learned).out;
 
-    // 2) найти индекс текущего в active (на всякий случай)
+    // 2) индекс текущего в active
     const idx = st.active.findIndex(x => pairKey(x) === curKey);
     const useIdx = idx >= 0 ? idx : pos;
 
@@ -724,11 +743,9 @@
     if (st.vault && st.vault.length > 0) {
       const pick = Math.floor(Math.random() * st.vault.length);
       const replacement = st.vault.splice(pick, 1)[0];
-      st.active[useIdx] = replacement; // сохраняем размер active и позицию
+      st.active[useIdx] = replacement;
     } else {
-      // если резерв пуст — удаляем этот элемент из активных
       st.active.splice(useIdx, 1);
-      // поправить pos
       if (st.active.length > 0) pos = useIdx % st.active.length;
       else pos = 0;
     }
@@ -801,6 +818,10 @@
 
   btnKnow.addEventListener('click', knowAndReplace);
   btnUndo.addEventListener('click', undoKnow);
+
+  taVault.addEventListener('input', () => {
+    vaultDirty = true;
+  });
 
   // init
   migrateOnce();
