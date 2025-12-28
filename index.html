@@ -15,21 +15,12 @@
     :root { color-scheme: light dark; }
     * { box-sizing: border-box; }
 
-    /* === ФОН НА ВЕСЬ ЭКРАН (делаем на html/body, не fixed слоями) === */
     html, body{
       margin:0;
       height:100%;
-      overflow:hidden;
-      background:
-        radial-gradient(1200px 720px at 50% 105%, rgba(0, 210, 200, 0.34), transparent 64%),
-        radial-gradient(1100px 820px at 72% 28%, rgba(0, 220, 205, 0.32), transparent 62%),
-        radial-gradient(980px 840px  at 28% 32%, rgba(90, 140, 255, 0.28), transparent 64%),
-        radial-gradient(1300px 980px at 55% 86%, rgba(20, 80, 170, 0.26), transparent 68%),
-        radial-gradient(980px 520px at 65% 50%, rgba(0, 255, 230, 0.12), transparent 70%),
-        radial-gradient(980px 520px at 30% 62%, rgba(150, 160, 255, 0.10), transparent 72%),
-        linear-gradient(180deg, #071a2a 0%, #04060c 100%);
-      background-repeat:no-repeat;
-      background-size:cover;
+      overflow:hidden;              /* важно: чтобы iOS не показывал “белую подложку” тела */
+      background:#061826;           /* запасной цвет */
+      overscroll-behavior: none;
     }
 
     @supports (-webkit-touch-callout: none) {
@@ -40,39 +31,85 @@
       font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
       color:#fff;
       -webkit-text-size-adjust:100%;
-      position: relative;
+      position:relative;
+      background:transparent;
     }
 
-    /* === iOS: фиксируем viewport, скролл только внутри .page === */
+    /* === ФИКСИРОВАННЫЙ ФОН НА ВЕСЬ ЭКРАН (убирает белые полосы/подложки iOS) === */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-10;
+      pointer-events:none;
+
+      background:
+        radial-gradient(1200px 720px at 50% 105%, rgba(0, 210, 200, 0.34), transparent 64%),
+        radial-gradient(1100px 820px at 72% 28%, rgba(0, 220, 205, 0.32), transparent 62%),
+        radial-gradient(980px 840px  at 28% 32%, rgba(90, 140, 255, 0.28), transparent 64%),
+        radial-gradient(1300px 980px at 55% 86%, rgba(20, 80, 170, 0.26), transparent 68%),
+        radial-gradient(980px 520px at 65% 50%, rgba(0, 255, 230, 0.12), transparent 70%),
+        radial-gradient(980px 520px at 30% 62%, rgba(150, 160, 255, 0.10), transparent 72%),
+        linear-gradient(180deg, #071a2a 0%, #04060c 100%);
+    }
+
+    /* лёгкая виньетка (очень мягкая, НЕ делает полосы) */
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-9;
+      pointer-events:none;
+      background: radial-gradient(1600px 1000px at 50% 45%, rgba(0,0,0,0.00) 60%, rgba(0,0,0,0.18) 100%);
+      opacity:0.55;
+    }
+
+    /* === Скролл только внутри .page, safe-area учтён === */
     .page{
-      position: fixed;
-      inset: 0;
-
-      display:flex;
-      align-items:center;
-      justify-content:center;
-
-      padding-top:  calc(16px + env(safe-area-inset-top));
-      padding-right:16px;
-      padding-bottom: calc(16px + env(safe-area-inset-bottom));
-      padding-left: 16px;
-
+      position:fixed;
+      inset:0;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: none;
 
-      /* маленький трюк против артефактов компоновки */
+      /* критично: чтобы при прокрутке не упиралось в статусбар */
+      padding-top: env(safe-area-inset-top);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+
+      /* чтобы при “автоскролле”/фокусе инпута сверху был зазор */
+      scroll-padding-top: calc(env(safe-area-inset-top) + 16px);
+      scroll-padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+
       transform: translateZ(0);
+      background: transparent;
     }
 
-    .wrap{ width:100%; max-width:560px; position:relative; z-index:1; }
+    /* stage — делает центрирование, но позволяет скроллить при большом контенте */
+    .stage{
+      min-height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      /* внутренние отступы — чтобы карточка не липла к краям */
+      padding:16px;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:560px;
+      position:relative;
+      z-index:1;
+    }
 
     @keyframes cardIn {
       0%   { transform: translateY(10px) scale(0.985); opacity: 0; filter: blur(2px); }
       100% { transform: translateY(0)    scale(1);     opacity: 1; filter: blur(0); }
     }
 
-    /* Вспышка “лампы” при правильном ответе */
+    /* “лампа” при правильном ответе */
     @keyframes glowFlash {
       0%   { opacity: 0; transform: scale(0.985); }
       18%  { opacity: 0.95; transform: scale(1.01); }
@@ -106,7 +143,7 @@
       box-shadow:
         0 22px 70px rgba(0,0,0,0.55),
         0 0 0 1px rgba(255,255,255,0.05) inset,
-        0 0 30px rgba(255,255,255,0.06);
+        0 0 28px rgba(255,255,255,0.06);
 
       animation: cardIn 420ms cubic-bezier(.2,.9,.2,1) both;
     }
@@ -123,7 +160,7 @@
       opacity:0.6;
     }
 
-    /* ЯРКИЙ “ЛАМПОВЫЙ” СВЕТ СЗАДИ (по умолчанию выключен) */
+    /* яркая вспышка света “как лампа” */
     .card::after{
       content:"";
       position:absolute;
@@ -131,30 +168,26 @@
       border-radius:26px;
       pointer-events:none;
       opacity:0;
-
-      /* белый центр + холодные края */
       background:
         radial-gradient(closest-side at 50% 50%,
-          rgba(255,255,255,0.85) 0%,
-          rgba(255,255,255,0.32) 28%,
+          rgba(255,255,255,0.88) 0%,
+          rgba(255,255,255,0.34) 28%,
           rgba(180,220,255,0.16) 48%,
           rgba(0,0,0,0) 70%);
-
-      /* без filter blur (на iOS иногда “пропадает”), вместо этого — мягкие тени */
       box-shadow:
-        0 0 70px rgba(255,255,255,0.22),
-        0 0 140px rgba(255,255,255,0.12),
-        0 0 220px rgba(120,200,255,0.10);
+        0 0 80px rgba(255,255,255,0.22),
+        0 0 160px rgba(255,255,255,0.12),
+        0 0 240px rgba(120,200,255,0.10);
     }
+    .card.glow::after{ animation: glowFlash 900ms ease-out 1; }
 
-    .card.glow::after{
-      animation: glowFlash 900ms ease-out 1;
-    }
-
+    /* слово/предложение: ограничиваем размеры, чтобы не улетало под статусбар */
     .word{
-      font-size:30px; font-weight:700;
+      font-size: clamp(22px, 6vw, 34px);
+      font-weight:700;
       margin:10px 0 6px;
-      word-break: break-word; line-height:1.15;
+      word-break: break-word;
+      line-height:1.12;
       text-shadow: 0 1px 0 rgba(0,0,0,0.25);
     }
     .hint{ opacity:0.72; font-size:13px; }
@@ -283,61 +316,63 @@
 
 <body>
   <div class="page">
-    <div class="wrap">
-      <div class="card" id="card">
+    <div class="stage">
+      <div class="wrap">
+        <div class="card" id="card">
 
-        <div class="word" id="questionText">—</div>
-        <div class="hint" id="hintText">Нажми «Новые» или добавь данные в резерв</div>
+          <div class="word" id="questionText">—</div>
+          <div class="hint" id="hintText">Нажми «Новые» или добавь данные в резерв</div>
 
-        <div class="grid" id="answers"></div>
+          <div class="grid" id="answers"></div>
 
-        <div class="msg" id="msgBox"></div>
+          <div class="msg" id="msgBox"></div>
 
-        <div class="row">
-          <button class="modeToggle" id="modeToggleBtn" type="button" aria-label="Переключить: слова / предложения">
-            <span class="modeDots" aria-hidden="true">
-              <span class="dot" id="dotLeft"></span>
-              <span class="dot" id="dotRight"></span>
-            </span>
-          </button>
+          <div class="row">
+            <button class="modeToggle" id="modeToggleBtn" type="button" aria-label="Переключить: слова / предложения">
+              <span class="modeDots" aria-hidden="true">
+                <span class="dot" id="dotLeft"></span>
+                <span class="dot" id="dotRight"></span>
+              </span>
+            </button>
 
-          <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
+            <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
 
-          <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">Выучил</button>
-          <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">Назад</button>
-          <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">Новые</button>
-          <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">Пропустить</button>
-          <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">Повторить</button>
+            <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">Выучил</button>
+            <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">Назад</button>
+            <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">Новые</button>
+            <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">Пропустить</button>
+            <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">Повторить</button>
+          </div>
+
+          <details open>
+            <summary><span id="vaultTitle">Резерв</span> <span id="vaultCount">(0)</span></summary>
+
+            <div class="muted" id="vaultHelp">
+              Формат: english - русский, по одному на строку. Минимум 4 строки.
+            </div>
+
+            <div class="taWrap">
+              <textarea id="vaultTextarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+            </div>
+
+            <div class="row">
+              <button class="smallbtn" id="saveVaultBtn" type="button">Сохранить</button>
+            </div>
+          </details>
+
+          <details>
+            <summary><span id="learnedTitle">Выучено</span> <span id="learnedCount">(0)</span></summary>
+
+            <div class="taWrap">
+              <textarea id="learnedTextarea" readonly></textarea>
+            </div>
+
+            <div class="row">
+              <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">Очистить</button>
+            </div>
+          </details>
+
         </div>
-
-        <details open>
-          <summary><span id="vaultTitle">Резерв</span> <span id="vaultCount">(0)</span></summary>
-
-          <div class="muted" id="vaultHelp">
-            Формат: english - русский, по одному на строку. Минимум 4 строки.
-          </div>
-
-          <div class="taWrap">
-            <textarea id="vaultTextarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
-          </div>
-
-          <div class="row">
-            <button class="smallbtn" id="saveVaultBtn" type="button">Сохранить</button>
-          </div>
-        </details>
-
-        <details>
-          <summary><span id="learnedTitle">Выучено</span> <span id="learnedCount">(0)</span></summary>
-
-          <div class="taWrap">
-            <textarea id="learnedTextarea" readonly></textarea>
-          </div>
-
-          <div class="row">
-            <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">Очистить</button>
-          </div>
-        </details>
-
       </div>
     </div>
   </div>
@@ -497,12 +532,9 @@
   }
 
   function triggerGlow(){
-    // перезапускаем анимацию каждый раз
     elCard.classList.remove('glow');
-    // force reflow
-    void elCard.offsetWidth;
+    void elCard.offsetWidth; // reflow
     elCard.classList.add('glow');
-    // убираем класс после анимации (на всякий случай)
     setTimeout(() => elCard.classList.remove('glow'), 950);
   }
 
@@ -656,7 +688,7 @@
     if (lock) return;
     if (norm(chosen) === norm(correct)){
       lock = true;
-      triggerGlow();              // <-- СВЕТ ТОЛЬКО ПРИ ПРАВИЛЬНОМ
+      triggerGlow();
       setMsg('Молодец ✅','ok');
       disableAnswers(true);
       setTimeout(goNext, AUTO_NEXT_MS);
@@ -667,7 +699,6 @@
 
   function goNext(){
     setMsg('');
-
     const st = S[appMode];
     disableAnswers(false);
     lock = false;
@@ -709,7 +740,6 @@
 
   function takeNewBatchFromVault(){
     const st = S[appMode];
-
     undoStacks[appMode] = [];
     updateUndoBtn();
 
@@ -743,7 +773,6 @@
 
   function takeRepeatFromLearned(){
     const st = S[appMode];
-
     undoStacks[appMode] = [];
     updateUndoBtn();
 
@@ -763,7 +792,6 @@
     const restLearned = st.learned.filter(x => !takeSet.has(pairKey(x)));
 
     const count = take.length;
-
     const displaced = st.active.slice(0, count);
     const newActive = take.concat(st.active.slice(count));
 
@@ -875,7 +903,9 @@
   btnRepeat.addEventListener('click', takeRepeatFromLearned);
 
   btnSkip.addEventListener('click', () => { setMsg(''); goNext(); });
-  btnClearLearned.addEventListener('click', clearLearned);
+  btnClearLearnedBtn = btnClearLearned;
+  btnClearLearnedBtn.addEventListener('click', clearLearned);
+
   btnKnow.addEventListener('click', knowAndReplace);
   btnUndo.addEventListener('click', undoKnow);
 
