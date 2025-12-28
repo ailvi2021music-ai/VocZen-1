@@ -15,14 +15,14 @@
     :root { color-scheme: light dark; }
     * { box-sizing: border-box; }
 
+    /* ВАЖНО: страница НЕ должна скроллиться (iOS bounce ломает фон) */
     html, body{
       margin:0;
       height:100%;
-      min-height:100%;
-      background:#061826; /* страховка */
+      background:#061826;
+      overflow:hidden; /* ключ */
     }
 
-    /* iOS: корректная высота под safe-area */
     @supports (-webkit-touch-callout: none) {
       html, body { height: -webkit-fill-available; }
     }
@@ -32,37 +32,24 @@
       color:#fff;
       -webkit-text-size-adjust:100%;
       background: transparent;
-
-      /* убирает белый/чёрный "underscroll" фон */
-      overscroll-behavior: none;
-      overflow-x: hidden;
-
       position: relative;
     }
 
-    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН (БЕЗ filter: blur — чтобы iOS не давал "швы") ===== */
+    /* ===== ЕДИНЫЙ ФОН НА ВЕСЬ ЭКРАН (без filter blur) ===== */
     .bg{
       position: fixed;
       inset: 0;
       z-index: -10;
       pointer-events: none;
-
-      /* Только градиенты — никаких filter/blur на whole-screen */
       background:
-        /* большие мягкие пятна */
         radial-gradient(1100px 820px at 72% 28%, rgba(0, 220, 205, 0.30), transparent 62%),
         radial-gradient(980px 840px  at 28% 32%, rgba(90, 140, 255, 0.26), transparent 64%),
         radial-gradient(1300px 980px at 55% 86%, rgba(20, 80, 170, 0.22), transparent 68%),
-
-        /* дополнительные "glow" кольца (замена bgGlow без blur) */
         radial-gradient(980px 520px at 65% 50%, rgba(0, 255, 230, 0.10), transparent 70%),
         radial-gradient(980px 520px at 30% 62%, rgba(150, 160, 255, 0.08), transparent 72%),
-
-        /* базовый градиент */
         linear-gradient(180deg, #071a2a 0%, #04060c 100%);
     }
 
-    /* лёгкая виньетка, но слабее и без "обрыва" снизу */
     .bgVignette{
       position: fixed;
       inset: 0;
@@ -73,34 +60,32 @@
       opacity: 0.9;
     }
 
-    /* ===== ЦЕНТРИРОВАНИЕ БЕЗ СМЕЩЕНИЯ ===== */
+    /* ===== ВАЖНО: viewport фиксированный, скролл только тут (не body) ===== */
     .page{
-      min-height:100vh;
-      min-height:100dvh;
-      min-height:100svh;
+      position: fixed;
+      inset: 0;
 
       display:flex;
       align-items:center;
       justify-content:center;
 
-      /* симметрично учитываем safe-area сверху и снизу */
       padding-top:  calc(16px + env(safe-area-inset-top));
       padding-right:16px;
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
       padding-left: 16px;
 
-      position:relative;
-      overflow:hidden;
       background: transparent;
+
+      overflow:auto;                 /* если контента станет много — скролл тут */
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: none;     /* убирает резину где поддерживается */
     }
 
-    @supports (-webkit-touch-callout: none) {
-      .page { min-height: -webkit-fill-available; }
-    }
+    /* чтобы внутри не “прилипала” тень/фон при iOS repaint */
+    .page { transform: translateZ(0); }
 
     .wrap{ width:100%; max-width:560px; position:relative; z-index:1; }
 
-    /* ===== АНИМАЦИЯ ПОЯВЛЕНИЯ ===== */
     @keyframes cardIn {
       0%   { transform: translateY(10px) scale(0.985); opacity: 0; filter: blur(2px); }
       100% { transform: translateY(0)    scale(1);     opacity: 1; filter: blur(0); }
@@ -204,7 +189,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:0; /* без символов */
+      gap:0;
     }
     .iconbtn .lbl{
       font-size:13px;
