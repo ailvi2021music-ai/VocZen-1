@@ -597,40 +597,95 @@
     renderTraining(false);
   }
 
-  // Повторить: безопасно — если learned < 4, ничего не переносим/не удаляем
+  // ✅ НОВАЯ ЛОГИКА "ПОВТОРИТЬ":
+  // - работает с 1+
+  // - берёт N из "Выучено" (N = min(learned, 10))
+  // - переносит их в "Изучаемые"
+  // - вымещает N текущих "Изучаемых" в "Резерв"
+  // - удаляет эти N из "Выучено"
   function takeRepeatFromLearned(){
     const st = S[appMode];
 
-    // сброс undo-истории
+    // сброс undo-истории (как у тебя было)
     undoStacks[appMode] = [];
 
-    if (!st.learned || st.learned.length < 4){
-      setMsg(`Недостаточно выученного для повтора (${modeLabel()}). Нужно минимум 4.`, 'bad');
+    if (!st.learned || st.learned.length === 0){
+      setMsg(`Нет выученного для повтора (${modeLabel()}).`, 'bad');
       syncTextareas();
       return;
     }
 
-    // готовим батч на копии
+    // сколько хотим вернуть на повтор
+    const wantN = Math.min(st.learned.length, BATCH_SIZE);
+
+    // исключим случай, когда часть "выучено" уже присутствует в active
+    const activeKeys = new Set((st.active || []).map(x => pairKey(x)));
+    const picked = [];
+    const pickedKeys = new Set();
+
+    // случайно выбираем из выученного
     const shuffled = shuffle(st.learned.slice());
-    const take = shuffled.slice(0, BATCH_SIZE);
-    if (take.length < 4){
-      setMsg(`Недостаточно выученного для повтора (${modeLabel()}).`, 'bad');
+    for (const item of shuffled) {
+      const k = pairKey(item);
+      if (!k || pickedKeys.has(k)) continue;
+      if (activeKeys.has(k)) continue; // уже изучается — не берём
+      picked.push(item);
+      pickedKeys.add(k);
+      if (picked.length >= wantN) break;
+    }
+
+    if (picked.length === 0){
+      setMsg(`Все выученные уже находятся в изучаемых (${modeLabel()}).`, 'bad');
       syncTextareas();
       return;
     }
 
-    // коммит: active = take, learned = learned - take
-    const takeSet = new Set(take.map(x => pairKey(x)));
-    const rest = st.learned.filter(x => !takeSet.has(pairKey(x)));
+    const n = picked.length;
 
-    st.active = take;
-    st.learned = rest;
+    // 1) удаляем picked из "Выучено"
+    st.learned = st.learned.filter(x => !pickedKeys.has(pairKey(x)));
 
+    // 2) вымещаем n текущих "Изучаемых" в "Резерв"
+    //    (вымещаем с конца, чтобы меньше шанс снести "текущее" слово)
+    let kicked = [];
+    if (Array.isArray(st.active) && st.active.length > 0){
+      if (st.active.length >= n) {
+        kicked = st.active.splice(st.active.length - n, n);
+      } else {
+        // если активных меньше — вымещаем всё что есть
+        kicked = st.active.splice(0, st.active.length);
+      }
+    } else {
+      st.active = [];
+    }
+
+    if (kicked.length){
+      st.vault = Array.isArray(st.vault) ? st.vault : [];
+      st.vault.push(...kicked);
+      st.vault = dedupePairs(st.vault).out;
+    }
+
+    // 3) добавляем picked в "Изучаемые"
+    st.active.push(...picked);
+    st.active = dedupePairs(st.active).out;
+
+    // 4) если после операций активных стало <4 — тренировка невозможна (4 варианта ответа)
+    //    но данные мы НЕ теряем, просто показываем сообщение
     saveModeData(appMode);
 
-    pos = 0;
+    // поправим pos/current так, чтобы не улетело
+    if (!st.active || st.active.length === 0){
+      pos = 0;
+      current = null;
+      setMsg(`Повтор: добавлено ${n}. Но активных нет — нажми ＋ или добавь слова.`, 'bad');
+      renderTraining(false);
+      return;
+    }
+
+    if (pos >= st.active.length) pos = 0;
     current = st.active[pos];
-    setMsg(`Повтор: загружено ${st.active.length} ✅`,'ok');
+
+    setMsg(`Повтор: добавлено ${n} → изучаемые. В резерв: ${kicked.length}.`, 'ok');
     renderTraining(false);
   }
 
@@ -666,10 +721,9 @@
     const useIdx = idx >= 0 ? idx : pos;
 
     // 3) заменить элемент на новый из резерва (или удалить, если резерва нет)
-    let replacement = null;
     if (st.vault && st.vault.length > 0) {
       const pick = Math.floor(Math.random() * st.vault.length);
-      replacement = st.vault.splice(pick, 1)[0];
+      const replacement = st.vault.splice(pick, 1)[0];
       st.active[useIdx] = replacement; // сохраняем размер active и позицию
     } else {
       // если резерв пуст — удаляем этот элемент из активных
@@ -688,7 +742,6 @@
       return;
     }
 
-    // показать замену сразу (или следующий элемент, если удалили)
     current = st.active[pos];
     setMsg('Готово ✅','ok');
     renderTraining(false);
