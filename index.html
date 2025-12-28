@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>VocZen</title>
   <meta name="apple-mobile-web-app-title" content="VocZen">
-  <meta name="theme-color" content="#0b1a24" />
+  <meta name="theme-color" content="#061826" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.webmanifest">
@@ -18,10 +18,10 @@
       margin:0;
       height:100%;
       min-height:100%;
-      background:#04050a; /* страховка */
+      background:#061826; /* страховка */
     }
 
-    /* iOS Safari / PWA: иногда только так корректно тянется под safe-area */
+    /* iOS: корректная высота под safe-area */
     @supports (-webkit-touch-callout: none) {
       html, body { height: -webkit-fill-available; }
     }
@@ -30,41 +30,46 @@
       font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
       color:#fff;
       -webkit-text-size-adjust:100%;
+      background: transparent;
 
-      /* важно: убирает белый "резиновый" фон при протяжке */
+      /* ключ: убирает белый "underscroll" фон */
       overscroll-behavior: none;
       overflow-x: hidden;
-
       position: relative;
     }
 
-    /* 100% гарантированный фон на весь экран (и под safe-area тоже) */
-    body::before{
-      content:"";
+    /* Фон на весь экран (включая safe-area) — не "убивает" цвет */
+    .bg{
       position: fixed;
       inset: 0;
-      z-index: -2;
+      z-index: -5;
+      pointer-events: none;
       background:
-        radial-gradient(900px 520px at 68% 40%, rgba(0, 200, 190, 0.22), transparent 60%),
-        radial-gradient(760px 520px at 28% 30%, rgba(60, 130, 255, 0.18), transparent 62%),
-        radial-gradient(900px 640px at 55% 78%, rgba(10, 40, 90, 0.28), transparent 65%),
-        linear-gradient(180deg, #060a12 0%, #04050a 100%);
-      background-attachment: fixed;
+        radial-gradient(900px 560px at 70% 28%, rgba(0, 210, 200, 0.30), transparent 62%),
+        radial-gradient(780px 560px at 25% 24%, rgba(70, 150, 255, 0.26), transparent 64%),
+        radial-gradient(980px 720px at 50% 78%, rgba(20, 70, 140, 0.26), transparent 66%),
+        linear-gradient(180deg, #071a2a 0%, #04060c 100%);
     }
 
-    /* мягкая “вуаль” и виньетка поверх */
-    body::after{
-      content:"";
+    .bgGlow{
+      position: fixed;
+      inset: -90px;
+      z-index: -4;
+      pointer-events: none;
+      background:
+        radial-gradient(780px 520px at 62% 42%, rgba(0, 240, 220, 0.18), transparent 62%),
+        radial-gradient(720px 520px at 30% 54%, rgba(120, 130, 255, 0.16), transparent 65%);
+      filter: blur(18px);
+      opacity: 1;
+    }
+
+    .bgVignette{
       position: fixed;
       inset: 0;
-      z-index: -1;
-      pointer-events:none;
+      z-index: -3;
+      pointer-events: none;
       background:
-        radial-gradient(900px 520px at 60% 35%, rgba(0, 220, 200, 0.10), transparent 65%),
-        radial-gradient(780px 540px at 30% 45%, rgba(90, 120, 255, 0.10), transparent 70%),
-        radial-gradient(1200px 700px at 50% 60%, transparent 55%, rgba(0,0,0,0.55) 100%);
-      filter: blur(18px);
-      opacity:0.9;
+        radial-gradient(1200px 760px at 50% 60%, transparent 52%, rgba(0,0,0,0.55) 100%);
     }
 
     .page{
@@ -78,7 +83,6 @@
 
       padding:16px;
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
-
       position:relative;
       overflow:hidden;
       background: transparent;
@@ -92,20 +96,23 @@
 
     .card{
       position:relative;
-      background:
-        radial-gradient(120% 140% at 50% 0%, rgba(255,255,255,0.12), rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.04) 100%),
-        rgba(10, 12, 18, 0.40);
-
-      border:1px solid rgba(255,255,255,0.14);
       border-radius:18px;
       padding:16px;
 
-      backdrop-filter: blur(18px) saturate(140%);
-      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      background:
+        radial-gradient(120% 140% at 50% 0%,
+          rgba(255,255,255,0.14),
+          rgba(255,255,255,0.07) 42%,
+          rgba(255,255,255,0.05) 100%),
+        rgba(8, 12, 18, 0.38);
+
+      border:1px solid rgba(255,255,255,0.14);
+      backdrop-filter: blur(18px) saturate(150%);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
 
       box-shadow:
-        0 20px 70px rgba(0,0,0,0.55),
-        0 0 0 1px rgba(255,255,255,0.04) inset;
+        0 22px 70px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.05) inset;
     }
 
     .card::before{
@@ -115,10 +122,10 @@
       border-radius:18px;
       pointer-events:none;
       background:
-        linear-gradient(135deg, rgba(255,255,255,0.14), transparent 35%),
-        linear-gradient(315deg, rgba(0, 210, 200, 0.10), transparent 45%);
+        linear-gradient(135deg, rgba(255,255,255,0.16), transparent 35%),
+        linear-gradient(315deg, rgba(0, 220, 200, 0.12), transparent 45%);
       mix-blend-mode: screen;
-      opacity:0.55;
+      opacity:0.6;
     }
 
     .word{
@@ -136,8 +143,7 @@
       padding:12px 14px;
       border-radius:14px;
       border:1px solid rgba(255,255,255,0.16);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+      background: linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.06));
       color:#fff; font-size:16px;
       text-align:left; cursor:pointer;
       user-select:none; word-break: break-word;
@@ -157,8 +163,7 @@
       padding:10px 12px;
       border-radius:12px;
       border:1px solid rgba(255,255,255,0.16);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+      background: linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.06));
       color:#fff; font-size:14px;
       cursor:pointer;
       white-space:nowrap;
@@ -178,7 +183,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:0;
+      gap:0; /* без символов */
     }
     .iconbtn .lbl{
       font-size:13px;
@@ -191,20 +196,17 @@
       width:44px; height:38px;
       border-radius:12px;
       border:1px solid rgba(255,255,255,0.16);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+      background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.05));
       display:flex;
       align-items:center;
       justify-content:center;
       padding:0;
       cursor:pointer;
       touch-action: manipulation;
-      position:relative;
       box-shadow: 0 10px 22px rgba(0,0,0,0.22);
     }
 
     .modeDots{ display:flex; gap:10px; align-items:center; justify-content:center; }
-
     .dot{
       width:8px; height:8px;
       border-radius:999px;
@@ -222,8 +224,7 @@
       margin-top:10px;
       padding:10px 12px;
       border-radius:12px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04));
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
       border:1px solid rgba(255,255,255,0.12);
       font-size:14px;
       white-space:pre-wrap;
@@ -265,81 +266,85 @@
 </head>
 
 <body>
-<div class="page">
-  <div class="wrap">
-    <div class="card">
+  <div class="bg"></div>
+  <div class="bgGlow"></div>
+  <div class="bgVignette"></div>
 
-      <div class="word" id="questionText">—</div>
-      <div class="hint" id="hintText">Нажми ＋ или добавь данные в резерв</div>
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
 
-      <div class="grid" id="answers"></div>
+        <div class="word" id="questionText">—</div>
+        <div class="hint" id="hintText">Нажми «Новые» или добавь данные в резерв</div>
 
-      <div class="msg" id="msgBox"></div>
+        <div class="grid" id="answers"></div>
 
-      <div class="row">
-        <button class="modeToggle" id="modeToggleBtn" type="button" aria-label="Переключить: слова / предложения">
-          <span class="modeDots" aria-hidden="true">
-            <span class="dot" id="dotLeft"></span>
-            <span class="dot" id="dotRight"></span>
-          </span>
-        </button>
-
-        <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
-
-        <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">
-          <span class="lbl">Выучил</span>
-        </button>
-
-        <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
-          <span class="lbl">Назад</span>
-        </button>
-
-        <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">
-          <span class="lbl">Новые</span>
-        </button>
-
-        <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">
-          <span class="lbl">Пропустить</span>
-        </button>
-
-        <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">
-          <span class="lbl">Повторить</span>
-        </button>
-      </div>
-
-      <details open>
-        <summary><span id="vaultTitle">Резерв</span> <span id="vaultCount">(0)</span></summary>
-
-        <div class="muted" id="vaultHelp">
-          Формат: english - русский, по одному на строку. Минимум 4 строки.
-        </div>
-
-        <div class="taWrap">
-          <textarea id="vaultTextarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
-        </div>
+        <div class="msg" id="msgBox"></div>
 
         <div class="row">
-          <button class="smallbtn" id="saveVaultBtn" type="button">Сохранить</button>
-        </div>
-      </details>
+          <button class="modeToggle" id="modeToggleBtn" type="button" aria-label="Переключить: слова / предложения">
+            <span class="modeDots" aria-hidden="true">
+              <span class="dot" id="dotLeft"></span>
+              <span class="dot" id="dotRight"></span>
+            </span>
+          </button>
 
-      <details>
-        <summary><span id="learnedTitle">Выучено</span> <span id="learnedCount">(0)</span></summary>
+          <button class="smallbtn" id="dirBtn" type="button">EN→RU</button>
 
-        <div class="taWrap">
-          <textarea id="learnedTextarea" readonly></textarea>
-        </div>
+          <button class="smallbtn iconbtn" id="knowBtn" type="button" aria-label="Выучил (перенести в выучено и заменить)">
+            <span class="lbl">Выучил</span>
+          </button>
 
-        <div class="row">
-          <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">
-            <span class="lbl">Очистить</span>
+          <button class="smallbtn iconbtn" id="undoBtn" type="button" aria-label="Шаг назад (отменить)">
+            <span class="lbl">Назад</span>
+          </button>
+
+          <button class="smallbtn iconbtn" id="newBtn" type="button" aria-label="Новые (взять из резерва)">
+            <span class="lbl">Новые</span>
+          </button>
+
+          <button class="smallbtn iconbtn" id="skipBtn" type="button" aria-label="Пропустить">
+            <span class="lbl">Пропустить</span>
+          </button>
+
+          <button class="smallbtn iconbtn" id="repeatBtn" type="button" aria-label="Повторить">
+            <span class="lbl">Повторить</span>
           </button>
         </div>
-      </details>
 
+        <details open>
+          <summary><span id="vaultTitle">Резерв</span> <span id="vaultCount">(0)</span></summary>
+
+          <div class="muted" id="vaultHelp">
+            Формат: english - русский, по одному на строку. Минимум 4 строки.
+          </div>
+
+          <div class="taWrap">
+            <textarea id="vaultTextarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+          </div>
+
+          <div class="row">
+            <button class="smallbtn" id="saveVaultBtn" type="button">Сохранить</button>
+          </div>
+        </details>
+
+        <details>
+          <summary><span id="learnedTitle">Выучено</span> <span id="learnedCount">(0)</span></summary>
+
+          <div class="taWrap">
+            <textarea id="learnedTextarea" readonly></textarea>
+          </div>
+
+          <div class="row">
+            <button class="smallbtn iconbtn" id="clearLearnedBtn" type="button" aria-label="Очистить выучено">
+              <span class="lbl">Очистить</span>
+            </button>
+          </div>
+        </details>
+
+      </div>
     </div>
   </div>
-</div>
 
 <script>
 (() => {
